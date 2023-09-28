@@ -10,6 +10,7 @@ from transformers.models.llama.tokenization_llama import LlamaTokenizer
 from transformers.models.llama.modeling_llama import LlamaForCausalLM
 from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
+from transformers import get_cosine_schedule_with_warmup
 from torch.utils.data import DataLoader
 import os
 import logging as log
@@ -143,15 +144,34 @@ class pretrainLlama(pl.LightningModule):
 
     def configure_optimizers(self):
         """set learning rates"""
-        parameters = self.model.parameters()
-        optimizer = AdamW(parameters, lr=self.hparam.learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
-        lr_schedulers = {
-            "scheduler": get_linear_schedule_with_warmup(optimizer,
-                                                         num_warmup_steps=100,
-                                                         num_training_steps=self.hparam.epoch * self.hparam.train_dataset_length),
-            "name": 'learning_rate_logs'
-        }
-        return [optimizer], [lr_schedulers]
+        if self.hparam.scheduler == 'linear':
+            parameters = self.model.parameters()
+            optimizer = AdamW(parameters, lr=self.hparam.learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
+            lr_schedulers = {
+                "scheduler": get_linear_schedule_with_warmup(optimizer,
+                                                            num_warmup_steps=100,
+                                                            num_training_steps=self.hparam.epoch * self.hparam.train_dataset_length),
+                "name": 'learning_rate_logs'
+            }
+            return [optimizer], [lr_schedulers]
+        elif self.hparam.scheduler == 'cosine':
+            """llama behavior, end learning rate matches 10% of the maximum learning rate
+                hard-coded to be 10% first
+            """
+            parameters = self.model.parameters()
+            optimizer = AdamW(parameters, lr=self.hparam.learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
+            lr_schedulers = {
+                "scheduler": get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=100,
+                                                            num_training_steps=self.hparam.epoch * self.hparam.train_dataset_length,
+                                                            num_cycles=0.39758361765,
+                                                            # number of waves in the cosine schedule - e.g. 0.5 for period 2 cos wave means take 0 to 1
+                                                            last_epoch=-1  # index of the last epoch when resuming training
+                                                            ),
+                "name": 'learning_rate_logs'
+            }
+            return [optimizer], [lr_schedulers]
+        else:
+            raise ValueError('You need to specify a scheduler first. Default is linear')
 
     def forward(self, **inputs):
         """ Pytorch forward function
@@ -184,6 +204,8 @@ class pretrainLlama(pl.LightningModule):
     def add_model_specific_args(cls, parser: ArgumentParser):
         """parser for hyperparameters"""
         parser.add_argument('--learning_rate', type=float, default=3e-4, help='Learning rate for Adam optimizer')
+        parser.add_argument('--scheduler', type=str, default='linear', help='Learning rate scheduler, either linear '
+                                                                            'or cosine')
         parser.add_argument('--epoch', type=int, default=4, help='number of epochs for the training')
         parser.add_argument('--batch_size', type=int, default=2, help='Batch sizes, sequence number per batch')
         return parser
