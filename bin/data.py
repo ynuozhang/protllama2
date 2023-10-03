@@ -1,3 +1,4 @@
+import sys
 import pytorch_lightning as pl
 import torch
 import pickle
@@ -11,27 +12,38 @@ import os
 from multiprocessing import Pool
 from tqdm import tqdm
 from datetime import datetime
+from pytorch_lightning import seed_everything
+import random
+seed_everything(42)
+
+global_tokenizer = None
 
 
-def standalone_tokenize_function(args):
-    s, tokenizer, max_sequence_length = args
-    tokens = tokenizer.encode(s)
-    tokenized_sequence = []
-    if len(tokens) > max_sequence_length - 1:
-        sampled_windows = sample_windows(tokens, max_sequence_length)
-        for sample in sampled_windows:
-            sample.insert(0, tokenizer.bos_id())
-            tokenized_sequence.append(sample)
-    else:
-        tokens.insert(0, tokenizer.bos_id())
-        tokenized_sequence.append(tokens)
-    return tokenized_sequence
+def init_pool(tokenizer):
+    global global_tokenizer
+    global_tokenizer = tokenizer
 
 
-# Moved this outside of the BatchedDataset class
+def standalone_tokenize_function(s, max_sequence_length):
+    try:
+        tokens = global_tokenizer.encode(s)
+        tokenized_sequence = []
+        if len(tokens) > max_sequence_length - 1:
+            sampled_windows = sample_windows(tokens, max_sequence_length)
+            for sample in sampled_windows:
+                sample.insert(0, global_tokenizer.bos_id())
+                tokenized_sequence.append(sample)
+        else:
+            tokens.insert(0, global_tokenizer.bos_id())
+            tokenized_sequence.append(tokens)
+        return tokenized_sequence
+    except Exception as e:
+        print(f"Error during tokenization of string {s}: {e}")
+        return []
+
+
+
 def sample_windows(sequence, max_sequence_length, extra_toks_per_seq=1):
-    import random
-    random.seed(42)
     sampled_windows = []
     sampled_windows.append(sequence[:max_sequence_length - extra_toks_per_seq])
     num_slices_required = (len(sequence) // max_sequence_length) - 2
@@ -61,22 +73,28 @@ class BatchedDataset(object):
         self.max_sequence_length = max_sequence_length
         # raw_tokenized_sequences = [self.tokenizer.encode(s) for s in self.sequence_strs]
 
-        checkpoint_interval = 1000000
         self.tokenized_sequences = []
 
-        args_for_tokenization = [(s, self.tokenizer, self.max_sequence_length) for s in self.sequence_strs]
+        # Automatically tokenize sequences upon creation of the object
+        self.tokenize_sequences()
 
-        with Pool(processes=64) as pool:
+    def tokenize_sequences(self):
+        checkpoint_interval = 1000000
+        with Pool(processes=64, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+            args_for_tokenization = [(s, self.max_sequence_length) for s in self.sequence_strs]
             for idx, result in enumerate(
-                    tqdm(pool.imap(standalone_tokenize_function, args_for_tokenization), total=len(self.sequence_strs))):
+                    tqdm(pool.starmap(standalone_tokenize_function, args_for_tokenization),
+                         total=len(self.sequence_strs))):
                 self.tokenized_sequences.extend(result)
-                if idx % checkpoint_interval == 0:
-                    # save checkpoint to a file
-                    print('Start generating tokens for %s strs' % str(idx))
-                    current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-                    with open(f'intermediate_checkpoint_{str(idx)}_{current_time}.pkl', 'wb') as f:
-                        pickle.dump(self.tokenized_sequences, f)
-                    print('Finish generating tokens for %s strs' % str(idx))
+                if idx % 1000000 == 0:
+                    self.save_checkpoint(idx)
+
+    def save_checkpoint(self, idx):
+        sys.stdout.write(f'Start generating tokens for {idx} strs\n')
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        with open(f'intermediate_checkpoint_{idx}_{current_time}.pkl', 'wb') as f:
+            pickle.dump(self.tokenized_sequences, f)
+        sys.stdout.write(f'Finish generating tokens for {idx} strs\n')
 
         # def tokenize_function(self, s):
         # tokens = self.tokenizer.encode(s)
