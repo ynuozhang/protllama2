@@ -1,4 +1,5 @@
 import sys
+import glob
 import pytorch_lightning as pl
 import torch
 import pickle
@@ -25,6 +26,7 @@ def init_pool(tokenizer):
 
 
 def standalone_tokenize_function(s, max_sequence_length):
+    global global_tokenizer
     try:
         tokens = global_tokenizer.encode(s)
         tokenized_sequence = []
@@ -75,26 +77,45 @@ class BatchedDataset(object):
 
         self.tokenized_sequences = []
 
-        # Automatically tokenize sequences upon creation of the object
+        # automatically tokenize sequences upon creation of the object
+        # if need manual, change it to call object.tokenize_sequence() in a separate line
         self.tokenize_sequences()
 
     def tokenize_sequences(self):
         checkpoint_interval = 1000000
+
+        # any checkpoints?
+        start_idx, file_name = self.get_latest_checkpoint_sequence()
+
+        if start_idx > 0:
+            with open(file_name, 'rb') as f:
+                self.tokenized_sequences = pickle.load(f)
+                print(f'Resume training from {start_idx}')
+
         with Pool(processes=64, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
-            args_for_tokenization = [(s, self.max_sequence_length) for s in self.sequence_strs]
             for idx, result in enumerate(
-                    tqdm(pool.starmap(standalone_tokenize_function, args_for_tokenization),
-                         total=len(self.sequence_strs))):
+                    tqdm(pool.imap(partial(standalone_tokenize_function, max_sequence_length=self.max_sequence_length),
+                                   self.sequence_strs[start_idx:]),
+                         total=len(self.sequence_strs) - start_idx)):
                 self.tokenized_sequences.extend(result)
-                if idx % 1000000 == 0:
-                    self.save_checkpoint(idx)
+                if (idx + start_idx) % checkpoint_interval == 0:
+                    self.save_checkpoint(idx + start_idx)
 
     def save_checkpoint(self, idx):
-        sys.stdout.write(f'Start generating tokens for {idx} strs\n')
+        print(f'Start generating tokens for {idx} strs')
         current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         with open(f'intermediate_checkpoint_{idx}_{current_time}.pkl', 'wb') as f:
             pickle.dump(self.tokenized_sequences, f)
-        sys.stdout.write(f'Finish generating tokens for {idx} strs\n')
+        print(f'Finish generating tokens for {idx} strs')
+
+    @staticmethod
+    def get_latest_checkpoint_sequence(ckpt_path='/data/rozen/home/e0833634/lama/protllama/batch_script/*.pkl'):
+        cache_list = glob.glob(ckpt_path)
+        if cache_list:
+            cache_fname = max(cache_list, key=os.path.getctime)
+            return int(cache_fname.split('_')[3]), cache_fname
+        else:
+            return 0
 
         # def tokenize_function(self, s):
         # tokens = self.tokenizer.encode(s)
@@ -114,9 +135,9 @@ class BatchedDataset(object):
         # def sample_windows(sequence, max_sequence_length, extra_toks_per_seq=1):
         # import random
         # random.seed(42)
-        """based on Phil's implement
-        Returns: a list of sampled windows.
-        """
+        #"""based on Phil's implement
+        #Returns: a list of sampled windows.
+        #"""
         # sampled_windows = []
         # the beginning window
         # sampled_windows.append(sequence[:max_sequence_length - extra_toks_per_seq])
