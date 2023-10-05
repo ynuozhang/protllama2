@@ -117,10 +117,11 @@ class BatchedDataset(object):
 
         if start_idx > 0:
             with open(file_name, 'rb') as f:
-                self.tokenized_sequences, _ = pickle.load(f)
+                self.tokenized_sequences, self.accumulated_length = pickle.load(f)
                 print(f'Resume training from {start_idx}')
+                print(f'Actual tokenized sequence number is {self.accumulated_length}')
 
-        with Pool(processes=64, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+        with Pool(processes=32, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
             for idx, result in enumerate(
                     tqdm(pool.imap(partial(standalone_tokenize_function, max_sequence_length=self.max_sequence_length),
                                    self.sequence_strs[start_idx:]),
@@ -129,16 +130,20 @@ class BatchedDataset(object):
                 if (idx + start_idx) % checkpoint_interval == 0:
                     batch_indices = self.get_batch_indices(offset=self.accumulated_length)
                     #batch_indices = self.get_batch_indices()
-                    self.save_checkpoint(idx + start_idx, batch_indices=batch_indices, split_name=split_name)
                     self.accumulated_length += len(self.tokenized_sequences)
+                    self.save_checkpoint(idx + start_idx, batch_indices=batch_indices, split_name=split_name)
             # save the last model
             batch_indices = self.get_batch_indices(offset=self.accumulated_length)
+            self.accumulated_length += len(self.tokenized_sequences)
             #batch_indices = self.get_batch_indices()
             self.save_checkpoint(len(self.sequence_strs), batch_indices=batch_indices)
 
     def process_chunk(self, tokenized_sequences, batch_indices, idx, split_name):
         token_batch_fn = TokenizeBatch(self.tokenizer)
-        processed_batches = [token_batch_fn([tokenized_sequences[i] for i in batch]) for batch in (batch_indices-self.accumulated_length)]
+        #processed_batches = [token_batch_fn([tokenized_sequences[i] for i in batch]) for batch in (batch_indices-self.accumulated_length)]
+        processed_batches = [
+            token_batch_fn([tokenized_sequences[i] for i in [idx - self.accumulated_length for idx in batch]]) for batch
+            in batch_indices]
         assert len(processed_batches) == len(batch_indices)
 
         # Shuffle together using a permutation
@@ -158,9 +163,9 @@ class BatchedDataset(object):
 
     def save_checkpoint(self, idx, batch_indices=None, split_name=None):
         print(f'Start generating tokens for {idx} sequences')
-        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        with open(f'{split_name}_intermediate_checkpoint_{idx}_{current_time}.pkl', 'wb') as f:
-            pickle.dump(self.tokenized_sequences, f)
+        #current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        with open(f'{split_name}_intermediate_checkpoint_{idx}.pkl', 'wb') as f:
+            pickle.dump((self.tokenized_sequences, self.accumulated_length), f)
 
         print(f'Start padding and masking for {idx} sequences {len(batch_indices)} batches')
         self.process_chunk(self.tokenized_sequences, batch_indices, idx, split_name)
@@ -176,7 +181,10 @@ class BatchedDataset(object):
         cache_list = glob.glob(ckpt_path)
         if cache_list:
             cache_fname = max(cache_list, key=os.path.getctime)
-            return int(cache_fname.split('_')[4]), cache_fname
+            # since we might need the processed dataset, revert the system to redo this checkpoint
+            index = int(cache_fname.split('_')[4]) - 1000000
+            fname = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_{index}_*.pkl'
+            return index, fname
         else:
             return 0, None
 
@@ -192,7 +200,7 @@ class BatchedDataset(object):
 
         for dataset_file in sorted(glob.glob(dataset_ckpt_path), key=lambda x: int(x.split('_')[4])):
             with open(dataset_file, 'rb') as f:
-                dataset = pickle.load(f)
+                dataset, _ = pickle.load(f)
                 all_attention_masks.extend([batch['attention_mask'] for batch in dataset])
                 all_input_ids.extend([batch['input_ids'] for batch in dataset])
                 all_labels.extend([batch['labels'] for batch in dataset])
