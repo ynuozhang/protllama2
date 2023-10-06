@@ -201,7 +201,7 @@ class BatchedDataset(object):
         all_input_ids = []
         all_labels = []
 
-        for dataset_file in sorted(glob.glob(dataset_ckpt_path), key=lambda x: int(x.split('_')[4].split('.')[0])):
+        for dataset_file in sorted(glob.glob(dataset_ckpt_path), key=lambda x: int(x.split('_')[-1].split('.')[0])):
             with open(dataset_file, 'rb') as f:
                 dataset = pickle.load(f)
                 all_attention_masks.extend([batch['attention_mask'] for batch in dataset])
@@ -220,7 +220,7 @@ class BatchedDataset(object):
 
         print('start to combine indices...')
         all_batch_indices = []
-        for batch_file in sorted(glob.glob(batch_idx_ckpt_path), key=lambda x: int(x.split('_')[4].split('.')[0])):
+        for batch_file in sorted(glob.glob(batch_idx_ckpt_path), key=lambda x: int(x.split('_')[-1].split('.')[0])):
             with open(batch_file, 'rb') as f:
                 batch_indices = pickle.load(f)
                 all_batch_indices.extend(batch_indices)
