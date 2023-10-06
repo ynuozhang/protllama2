@@ -117,26 +117,28 @@ class BatchedDataset(object):
 
         if start_idx > 0:
             with open(file_name, 'rb') as f:
-                self.tokenized_sequences, self.accumulated_length = pickle.load(f)
+                _, self.accumulated_length = pickle.load(f)
+                # We initialize tokenized_sequences as an empty list because previous tokenized data has
+                # already been processed and saved in previous runs.
+                self.tokenized_sequences = []
                 print(f'Resume training from {start_idx}')
                 print(f'Actual tokenized sequence number is {self.accumulated_length}')
 
-        with Pool(processes=32, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+        with Pool(processes=16, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
             for idx, result in enumerate(
                     tqdm(pool.imap(partial(standalone_tokenize_function, max_sequence_length=self.max_sequence_length),
                                    self.sequence_strs[start_idx:]),
                          total=len(self.sequence_strs) - start_idx)):
                 self.tokenized_sequences.extend(result)
-                if (idx + start_idx) % checkpoint_interval == 0:
+                if ((idx + start_idx) % checkpoint_interval == 0) & (idx != 0):
                     batch_indices = self.get_batch_indices(offset=self.accumulated_length)
-                    #batch_indices = self.get_batch_indices()
                     self.accumulated_length += len(self.tokenized_sequences)
                     self.save_checkpoint(idx + start_idx, batch_indices=batch_indices, split_name=split_name)
             # save the last model
             batch_indices = self.get_batch_indices(offset=self.accumulated_length)
             self.accumulated_length += len(self.tokenized_sequences)
             #batch_indices = self.get_batch_indices()
-            self.save_checkpoint(len(self.sequence_strs), batch_indices=batch_indices)
+            self.save_checkpoint(len(self.sequence_strs), batch_indices=batch_indices, split_name=split_name)
 
     def process_chunk(self, tokenized_sequences, batch_indices, idx, split_name):
         token_batch_fn = TokenizeBatch(self.tokenizer)
@@ -158,7 +160,7 @@ class BatchedDataset(object):
         with open(f'{split_name}_intermediate_checkpoint_batches_{idx}.pkl', 'wb') as f:
             pickle.dump(batch_indices, f)
 
-        del processed_batches, batch_indices, tokenized_sequences
+        del token_batch_fn, processed_batches, batch_indices, tokenized_sequences
         gc.collect()
 
     def save_checkpoint(self, idx, batch_indices=None, split_name=None):
@@ -182,15 +184,16 @@ class BatchedDataset(object):
         if cache_list:
             cache_fname = max(cache_list, key=os.path.getctime)
             # since we might need the processed dataset, revert the system to redo this checkpoint
-            index = int(cache_fname.split('_')[4]) - 1000000
-            fname = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_{index}_*.pkl'
+            index = int(cache_fname.split('_')[4].split('.')[0]) - 1000000
+            # tell the model: original sequences up to this index is processed already, start from 0 for subsets again
+            fname = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_{index}.pkl'
             return index, fname
         else:
             return 0, None
 
     @staticmethod
     def combine_checkpoints(split_name, batch_path):
-        dataset_ckpt_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_*.pkl'
+        dataset_ckpt_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_processed_dataset_*.pkl'
         batch_idx_ckpt_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_batches_*.pkl'
         output_file = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_combined_tokenized_sequences.hf'
 
@@ -198,9 +201,9 @@ class BatchedDataset(object):
         all_input_ids = []
         all_labels = []
 
-        for dataset_file in sorted(glob.glob(dataset_ckpt_path), key=lambda x: int(x.split('_')[4])):
+        for dataset_file in sorted(glob.glob(dataset_ckpt_path), key=lambda x: int(x.split('_')[4].split('.')[0])):
             with open(dataset_file, 'rb') as f:
-                dataset, _ = pickle.load(f)
+                dataset = pickle.load(f)
                 all_attention_masks.extend([batch['attention_mask'] for batch in dataset])
                 all_input_ids.extend([batch['input_ids'] for batch in dataset])
                 all_labels.extend([batch['labels'] for batch in dataset])
@@ -217,7 +220,7 @@ class BatchedDataset(object):
 
         print('start to combine indices...')
         all_batch_indices = []
-        for batch_file in sorted(glob.glob(batch_idx_ckpt_path), key=lambda x: int(x.split('_')[5])):
+        for batch_file in sorted(glob.glob(batch_idx_ckpt_path), key=lambda x: int(x.split('_')[4].split('.')[0])):
             with open(batch_file, 'rb') as f:
                 batch_indices = pickle.load(f)
                 all_batch_indices.extend(batch_indices)

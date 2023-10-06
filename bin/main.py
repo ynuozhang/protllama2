@@ -1,6 +1,7 @@
 import argparse
 import os
-from model import *
+from .model import *
+from .data import PretrainDataset
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, TQDMProgressBar, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
@@ -32,8 +33,7 @@ def parse_args():
 
 
 hparam = parse_args()
-dm = pretrainDataset(batch_size=hparam.batch_size,
-                     target=hparam.target,
+dm = PretrainDataset(target=hparam.target,
                      max_sequence_length=hparam.max_position_embeddings)
 # make sure dataset has "training" key
 hparam.train_dataset_length = len(dm.dataset['train'])
