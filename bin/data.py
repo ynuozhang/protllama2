@@ -3,7 +3,7 @@ import glob
 import pytorch_lightning as pl
 import torch
 import pickle
-from datasets import Dataset, DatasetDict, load_from_disk, concatenate_datasets
+from datasets import Dataset, DatasetDict, load_from_disk
 from functools import partial
 from transformers.models.llama.tokenization_llama import LlamaTokenizer
 from torch.utils.data import DataLoader
@@ -18,6 +18,7 @@ import random
 import gc
 import h5py
 import numpy as np
+
 seed_everything(42)
 
 global_tokenizer = None
@@ -137,12 +138,12 @@ class BatchedDataset(object):
             # save the last model
             batch_indices = self.get_batch_indices(offset=self.accumulated_length)
             self.accumulated_length += len(self.tokenized_sequences)
-            #batch_indices = self.get_batch_indices()
+            # batch_indices = self.get_batch_indices()
             self.save_checkpoint(len(self.sequence_strs), batch_indices=batch_indices, split_name=split_name)
 
     def process_chunk(self, tokenized_sequences, batch_indices, idx, split_name):
         token_batch_fn = TokenizeBatch(self.tokenizer)
-        #processed_batches = [token_batch_fn([tokenized_sequences[i] for i in batch]) for batch in (batch_indices-self.accumulated_length)]
+        # processed_batches = [token_batch_fn([tokenized_sequences[i] for i in batch]) for batch in (batch_indices-self.accumulated_length)]
         processed_batches = [
             token_batch_fn([tokenized_sequences[i] for i in [idx - self.accumulated_length for idx in batch]]) for batch
             in batch_indices]
@@ -165,7 +166,7 @@ class BatchedDataset(object):
 
     def save_checkpoint(self, idx, batch_indices=None, split_name=None):
         print(f'Start generating tokens for {idx} sequences')
-        #current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        # current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         with open(f'{split_name}_intermediate_checkpoint_{idx}.pkl', 'wb') as f:
             pickle.dump((self.tokenized_sequences, self.accumulated_length), f)
 
@@ -233,9 +234,9 @@ class BatchedDataset(object):
     def load_combined_dataset(self, split_name, combined_file):
         self.processed_sequences = load_from_disk(combined_file)
         print('Load combined processed sequences from ', combined_file)
-        #with open(f"/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_Batch_indices.pkl", 'rb') as f:
-            #self.batch_indices = pickle.load(f)
-        #print('Loaded batch indices')
+        # with open(f"/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_Batch_indices.pkl", 'rb') as f:
+        # self.batch_indices = pickle.load(f)
+        # print('Loaded batch indices')
 
     def get_batch_indices(self, extra_toks_per_seq=1, offset=0):
         sizes = [(len(tokens), i) for i, tokens in enumerate(self.tokenized_sequences)]
@@ -280,10 +281,11 @@ class PretrainDataset(pl.LightningDataModule):
     def __init__(self,
                  # batch_size: int = 1,
                  target: str = 'protein',
-                 max_sequence_length: int = 512):
+                 max_sequence_length: int = 512,
+                 vocab_size='8k'):
         super().__init__()
 
-        self.vocab_size = '8k'
+        self.vocab_size = vocab_size
         self.target = target
         self.original_data = self.retrieve_data(self.target)
         self.tokenizer = self.tokenizer_generation(self.target, self.vocab_size)
@@ -338,34 +340,36 @@ class PretrainDataset(pl.LightningDataModule):
         combined_tokenized_sequences_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_combined_tokenized_sequences.hf'
 
         if os.path.exists(combined_tokenized_sequences_path):
-            #print("Loading from combined dataset...")
-            #batched_dataset = BatchedDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
-            #batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
+            # print("Loading from combined dataset...")
+            # batched_dataset = BatchedDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
+            # batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
             pass
         else:
             print("Tokenizing sequences...")
             batched_dataset = BatchedDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
             batched_dataset.tokenize_sequences(split_name=split_name)
-            batched_dataset.combine_checkpoints(split_name=split_name, batch_path = self.batch_path)
-            #batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
+            batched_dataset.combine_checkpoints(split_name=split_name, batch_path=self.batch_path)
+            # batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
 
-        del self.original_data, batched_dataset
+        del batched_dataset
         gc.collect()
 
-        #batches_indices = batched_dataset.batch_indices # use batch indices from the loaded/processed dataset
-        #print(f"Processing {len(batches_indices)} batches for {split_name} split...")
+        # batches_indices = batched_dataset.batch_indices # use batch indices from the loaded/processed dataset
+        # print(f"Processing {len(batches_indices)} batches for {split_name} split...")
 
-        #with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', "wb") as file:
-            #pickle.dump(batches_indices, file)
+        # with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', "wb") as file:
+        # pickle.dump(batches_indices, file)
         print('Finish generating dataloader for ', split_name)
 
-    #def shuffle_dataset(self, dataset):
-        #shuffled_dataset = dataset.shuffle()
-        #return shuffled_dataset
+    # def shuffle_dataset(self, dataset):
+    # shuffled_dataset = dataset.shuffle()
+    # return shuffled_dataset
 
     def save_tokenized_data(self):
         for split_name in ['train', 'valid']:
+            # for split_name in ['train']:
             self.process_and_store_data(split_name)
+        del self.original_data
 
         train_combined_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/train_combined_tokenized_sequences.hf'
         validation_combined_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/valid_combined_tokenized_sequences.hf'
@@ -374,11 +378,16 @@ class PretrainDataset(pl.LightningDataModule):
         train_dataset = load_from_disk(train_combined_path)
         validation_dataset = load_from_disk(validation_combined_path)
 
-        # Concatenate the datasets
-        combined_dataset = concatenate_datasets([train_dataset, validation_dataset])
+        print('Start combining datasets')
+
+        combined_datasets = DatasetDict({
+            'train': train_dataset,
+            'valid': validation_dataset
+        })
 
         # If you want to save the combined dataset:
-        combined_dataset.save_to_disk(self.dataset_path)
+        combined_datasets.save_to_disk(self.dataset_path)
+        del combined_datasets
         gc.collect()
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)

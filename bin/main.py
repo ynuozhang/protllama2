@@ -17,6 +17,8 @@ def parse_args():
                         help='Working as a namespace for every file generated')
     parser.add_argument('--max_position_embeddings', type=int, default=512,
                         help='Maximum length of the input')
+    parser.add_argument('--vocab_size', type=str, default='8k',
+                        help='Vocab size used to generate sentencepiece tokenizer')
     parser.add_argument('--hidden_size', type=int, default=640,
                         help='Embedding dimension')
     parser.add_argument('--intermediate_size', type=int, default=1720,
@@ -41,10 +43,10 @@ training_log_path = str('protllama/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
 logger = WandbLogger(project="protllama2",
-                     name="%s_%s_pre-training_log" % (hparam.target, hparam.date), #display on the web
+                     name=f"{hparam.target}_{hparam.date}_pre-training_log", #display on the web
                      save_dir='protllama/pl_logs/',
                      job_type='model-training',
-                     group='pretrain_protllama2',
+                     group=f'pretrain_protllama2_{hparam.vocab_size}_{hparam.max_position_embeddings}',
                      id='version_%s' % str(1))
 seed_everything(42)
 model = pretrainLlama(hparam)

@@ -10,7 +10,7 @@ import os
 import logging as log
 import glob
 from argparse import ArgumentParser
-from .data import pretrainDataset
+from .data import PretrainDataset
 
 
 class pretrainLlama(pl.LightningModule):
@@ -18,7 +18,7 @@ class pretrainLlama(pl.LightningModule):
         super(pretrainLlama, self).__init__()
         self.save_hyperparameters()
         self.hparam = hparam  # need to contain epoch, target, date, learning rate, batch_size, num_frozen_epochs
-        self.tokenizer = pretrainDataset(self.hparam.target).tokenizer
+        self.tokenizer = PretrainDataset(self.hparam.target, self.hparam.max_position_embeddings, self.hparam.vocab_size).tokenizer
         self.MODEL_CONFIGS = self.retrieve_config()
         self.__build_model()
 
@@ -28,17 +28,15 @@ class pretrainLlama(pl.LightningModule):
             config_dict = {'7b': LlamaConfig(max_position_embeddings=self.hparam.max_position_embeddings,
                                              hidden_size=self.hparam.hidden_size,
                                              intermediate_size=self.hparam.intermediate_size)}
-            return config_dict
+            return config_dict['7b']
         elif self.hparam.target == 'protein':
             config_dict = {
                 'protllama2': LlamaConfig(max_position_embeddings=self.hparam.max_position_embeddings,  # maximum length
                                           hidden_size=self.hparam.hidden_size,
-                                          bos_token_id=self.tokenizer.bos_token_id,
-                                          eos_token_id=self.tokenizer.eos_token_id,
                                           transformers_version=transformers.__version__,
                                           intermediate_size=self.hparam.intermediate_size,
-                                          vocab_size=50257)}
-            return config_dict
+                                          vocab_size=self.hparam.vocab_size)}
+            return config_dict['protllama2']
         else:
             raise ValueError('Have not prepared dataset for this target')
 
@@ -57,9 +55,7 @@ class pretrainLlama(pl.LightningModule):
 
     def __build_model(self) -> None:
         """start model building, can add customized classification head"""
-        config = '7b'
-        config = self.MODEL_CONFIGS[config]
-        self.model = LlamaForCausalLM(config)
+        self.model = LlamaForCausalLM(self.MODEL_CONFIGS)
         print(self.model.lm_head.weight)
 
     def configure_optimizers(self):
@@ -126,14 +122,8 @@ class pretrainLlama(pl.LightningModule):
         parser.add_argument('--learning_rate', type=float, default=3e-4, help='Learning rate for Adam optimizer')
         parser.add_argument('--scheduler', type=str, default='linear', help='Learning rate scheduler, either linear '
                                                                             'or cosine')
-        parser.add_argument('--epoch', type=int, default=4, help='number of epochs for the training')
-        parser.add_argument('--batch_size', type=int, default=2, help='Batch sizes, sequence number per batch')
+        parser.add_argument('--epoch', type=int, default=1, help='number of epochs for the training')
+        #parser.add_argument('--batch_size', type=int, default=2, help='Batch sizes, sequence number per batch')
         return parser
-
-
-if __name__ == '__main__':
-    dm = pretrainDataset()
-    dm.setup("fit")
-    print(next(iter(dm.train_dataloader())))
 
 
