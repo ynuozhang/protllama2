@@ -10,7 +10,8 @@ import os
 import logging as log
 import glob
 from argparse import ArgumentParser
-from .data import PretrainDataset
+from protllama.bin.data import PretrainDataset
+import torch
 
 
 class pretrainLlama(pl.LightningModule):
@@ -35,23 +36,24 @@ class pretrainLlama(pl.LightningModule):
                                           hidden_size=self.hparam.hidden_size,
                                           transformers_version=transformers.__version__,
                                           intermediate_size=self.hparam.intermediate_size,
-                                          vocab_size=self.hparam.vocab_size)}
+                                          vocab_size=int(self.hparam.vocab_size.rstrip('k')) * 1000)}
+            print(config_dict['protllama2'])
             return config_dict['protllama2']
         else:
             raise ValueError('Have not prepared dataset for this target')
 
-    def check_point_check(self):
-        os.mkdir('/data/rozen/home/e0833634/transformerDENV/result/model_cache/%s' % self.hparam.date)
+    #def check_point_check(self):
+        #os.mkdir('/data/rozen/home/e0833634/transformerDENV/result/model_cache/%s' % self.hparam.date)
         # try to load from checkpoints
-        cache_list = glob.glob(
-            '/data/rozen/home/e0833634/transformerDENV/result/model_cache/%s/*' % self.hparam.date)
-        try:
+        #cache_list = glob.glob(
+            #'/data/rozen/home/e0833634/transformerDENV/result/model_cache/%s/*' % self.hparam.date)
+        #try:
             # get the most recently saved checkpoint
-            cache_fname = max(cache_list, key=os.path.getctime)
-            log.info(f'\n-- model at check point is loaded successfully')
-            return FtESM1b.load_from_checkpoint(cache_fname)
-        except FileNotFoundError:
-            log.info(f'\n-- Did not found any checkpoints.')
+            #cache_fname = max(cache_list, key=os.path.getctime)
+            #log.info(f'\n-- model at check point is loaded successfully')
+            #return FtESM1b.load_from_checkpoint(cache_fname)
+        #except FileNotFoundError:
+            #log.info(f'\n-- Did not found any checkpoints.')
 
     def __build_model(self) -> None:
         """start model building, can add customized classification head"""
@@ -94,14 +96,41 @@ class pretrainLlama(pl.LightningModule):
         Returns:
         dict with model outputs (loss, logits, hidden layer, attention)
         """
+        print(inputs)
         return self.model(**inputs)
 
-    def training_step(self, batch, batch_nb: int):
-        for k, v in batch.items():
-            batch[k] = v
+    def training_step(self, batch, batch_nb: int, verbose=True):
         outputs = self.forward(**batch)
+        print(outputs)
         loss_train = outputs[0]
-        self.log('train_loss', loss_train, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
+        # Compute the perplexity
+        perplexity = torch.exp(outputs[0].cpu())  # Ensure outputs are on CPU
+
+        # Accuracy computation
+        # Shifting
+        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(
+            dim=-1).cpu()  # Ensure outputs and argmax result are on CPU
+        if verbose:
+            print(shift_logits)
+
+        # Assuming 'labels' is a key in batch containing true token IDs
+        shift_labels = batch['labels'][..., 1:].contiguous().cpu()  # Move labels to CPU
+        if verbose:
+            print(shift_logits)
+
+        non_padding_mask = shift_labels != -100
+
+        # Compare predictions to true labels, but only for non-padding tokens
+        acc_train = ((shift_logits == shift_labels) & non_padding_mask).sum().item() / non_padding_mask.sum().item()
+        if verbose:
+            print(acc_train)
+
+        # Log
+        self.log('train_loss', loss_train, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_accuracy', acc_train, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+
         return loss_train
 
     def validation_step(self, batch, batch_nb: int):
@@ -109,11 +138,29 @@ class pretrainLlama(pl.LightningModule):
         Returns:
             - dictionary passed to the validation_end function.
         """
-        for k, v in batch.items():
-            batch[k] = v
         outputs = self.forward(**batch)
-        loss_val = outputs[0]
-        self.log('val_loss', loss_val, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        loss_val = outputs[0].cpu()
+
+        # Compute the perplexity
+        perplexity = torch.exp(loss_val)  # Ensure outputs are on CPU
+
+        # Accuracy computation
+        # Shifting
+        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(
+            dim=-1).cpu()  # Ensure outputs and argmax result are on CPU
+
+        # Assuming 'labels' is a key in batch containing true token IDs
+        shift_labels = batch['labels'][..., 1:].contiguous().cpu()  # Move labels to CPU
+
+        non_padding_mask = shift_labels != -100
+
+        # Compare predictions to true labels, but only for non-padding tokens
+        acc_val = ((shift_logits == shift_labels) & non_padding_mask).sum().item() / non_padding_mask.sum().item()
+
+        # Log
+        self.log('val_loss', loss_val, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_accuracy', acc_val, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         return loss_val
 
     @classmethod

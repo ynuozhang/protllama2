@@ -290,8 +290,9 @@ class PretrainDataset(pl.LightningDataModule):
         self.original_data = self.retrieve_data(self.target)
         self.tokenizer = self.tokenizer_generation(self.target, self.vocab_size)
         self.max_sequence_length = max_sequence_length
-        self.dataset_path = f'/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_Dataset.hf'
-        self.batch_path = f'/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}'
+        #self.dataset_path = f'/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_Dataset.hf'
+        self.dataset_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_1million_dataset.hf'
+        #self.batch_path = f'/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}'
 
         if not os.path.exists(self.dataset_path):
             print('Start generating tokenized datasets')
@@ -351,7 +352,7 @@ class PretrainDataset(pl.LightningDataModule):
             batched_dataset.combine_checkpoints(split_name=split_name, batch_path=self.batch_path)
             # batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
 
-        del batched_dataset
+            del batched_dataset
         gc.collect()
 
         # batches_indices = batched_dataset.batch_indices # use batch indices from the loaded/processed dataset
@@ -392,11 +393,23 @@ class PretrainDataset(pl.LightningDataModule):
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)
 
+    def collate_fn(self, batch_indices, split_name):
+        # Given a list of indices, retrieve the corresponding batch from your HuggingFace Dataset
+        batch_ = {
+            'attention_mask': [self.dataset[split_name]['attention_mask'][i] for i in batch_indices[0]],
+            'input_ids': [self.dataset[split_name]['input_ids'][i] for i in batch_indices[0]],
+            'labels': [self.dataset[split_name]['labels'][i] for i in batch_indices[0]]
+        }
+        return batch_
+
     def dataloader_preprocessing(self, split_name):
-        ds = self.dataset[split_name]
+        #ds = self.dataset[split_name]
         with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', 'rb') as file:
-            batches = pickle.load(file)
-        return torch.utils.data.DataLoader(ds, batch_sampler=batches, pin_memory=True)
+            batch_indices = pickle.load(file)
+        with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', 'rb') as file:
+            batch_indices = pickle.load(file)
+        return torch.utils.data.DataLoader(batch_indices, batch_size=1, pin_memory=True, shuffle=False, num_workers=20,
+                                           collate_fn=partial(self.collate_fn, split_name=split_name))
 
     def train_dataloader(self):
         # if 'train' in self.dataset.keys():
@@ -429,7 +442,7 @@ class PretrainDataset(pl.LightningDataModule):
         # return DataLoader(val_ds, batch_size=self.batch_size, shuffle=False,
         # drop_last=False,
         # collate_fn=partial(self.tokenize_batch))
-        return self.dataloader_preprocessing('validation')
+        return self.dataloader_preprocessing('valid')
 
 
 if __name__ == '__main__':

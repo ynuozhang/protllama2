@@ -1,7 +1,7 @@
 import argparse
 import os
-from .model import *
-from .data import PretrainDataset
+from protllama.bin.model import *
+from protllama.bin.data import PretrainDataset
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, TQDMProgressBar, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
@@ -62,10 +62,10 @@ if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(
     dirpath=training_model_path,
-    filename="{epoch}-{train_loss:.2f}-{val_loss:.2f}-%s_%s" % (hparam.target, hparam.date),
+    filename="{epoch}-{train_loss:.2f}-{val_loss:.2f}-%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
     save_top_k=hparam.save_top_k,
     verbose=True,
-    monitor="loss",
+    monitor="val_loss",
     mode="min",
 )
 lr_monitor = LearningRateMonitor(
@@ -79,14 +79,14 @@ trainer = Trainer(
     logger=logger,
     # max_epochs=1,
     # min_epochs=1,
-    callbacks=[TQDMProgressBar(refresh_rate=10), lr_monitor],
+    callbacks=[TQDMProgressBar(refresh_rate=10), lr_monitor, checkpoint_callback],
     deterministic=True,
     enable_model_summary=True
 )
 
 # automatic garbage collection
 import gc
-
 gc.collect()
+
 trainer.fit(model, datamodule=dm)
 print(trainer.checkpoint_callback.best_model_path)
