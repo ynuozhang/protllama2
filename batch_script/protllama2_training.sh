@@ -19,7 +19,7 @@ python3.8 bin/main.py \
   $DATA_LOC \
   $OUTPUT_LOC \
   $TOKENIZER_LOC \
-  --num_workers 4 \
+  --num_workers 8 \
   --num_hidden_layers 32\
   --batch_size 8 \
   --max_position_embeddings 512 \
