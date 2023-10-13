@@ -2,7 +2,7 @@
 #PBS -N tokens
 #PBS -q gpu
 #PBS -l walltime=72:00:00
-#PBS -l select=1:ncpus=64:mem=400g:ngpus=1
+#PBS -l select=1:ncpus=64:mem=400g:ngpus=1:vnode=computeg03
 #PBS -keo
 
 HOME_LOC=/data/rozen/home/e0833634/lama/protllama/
@@ -12,7 +12,7 @@ module load singularity
 
 singularity exec --nv  $image  scl enable rh-python38 bash << EOF > stdout.$PBS_JOBID 2> stderr.$PBS_JOBID
 
-python3.8 /data/rozen/home/e0833634/lama/protllama/bin/data.py > Oct4_generate_protein_tokens_8k.log 2>&1
+python3.8 /data/rozen/home/e0833634/lama/protllama/bin/data.py > Oct5_part7_redo_trainingset_generate_protein_tokens_8k.log 2>&1
 
 exit
 

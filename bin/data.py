@@ -102,19 +102,17 @@ class BatchedDataset(object):
         self.sequence_strs = sequence_strs['sequences']
         self.tokenizer = tokenizer
         self.max_sequence_length = max_sequence_length
-        # raw_tokenized_sequences = [self.tokenizer.encode(s) for s in self.sequence_strs]
-
         self.tokenized_sequences = []
         self.accumulated_length = 0
         # automatically tokenize sequences upon creation of the object
         # if need manual, change it to call object.tokenize_sequence() in a separate line
         # self.tokenize_sequences()
 
-    def tokenize_sequences(self, split_name):
+    def tokenize_sequences(self, base_path, split_name):
         checkpoint_interval = 1000000
 
         # any checkpoints?
-        start_idx, file_name = self.get_latest_checkpoint_sequence(split_name)
+        start_idx, file_name = self.get_latest_checkpoint_sequence(base_path, split_name)
 
         if start_idx > 0:
             with open(file_name, 'rb') as f:
@@ -134,16 +132,14 @@ class BatchedDataset(object):
                 if ((idx + start_idx) % checkpoint_interval == 0) & (idx != 0):
                     batch_indices = self.get_batch_indices(offset=self.accumulated_length)
                     self.accumulated_length += len(self.tokenized_sequences)
-                    self.save_checkpoint(idx + start_idx, batch_indices=batch_indices, split_name=split_name)
+                    self.save_checkpoint(idx + start_idx, base_path, batch_indices=batch_indices, split_name=split_name)
             # save the last model
             batch_indices = self.get_batch_indices(offset=self.accumulated_length)
             self.accumulated_length += len(self.tokenized_sequences)
-            # batch_indices = self.get_batch_indices()
-            self.save_checkpoint(len(self.sequence_strs), batch_indices=batch_indices, split_name=split_name)
+            self.save_checkpoint(len(self.sequence_strs), base_path, batch_indices=batch_indices, split_name=split_name)
 
-    def process_chunk(self, tokenized_sequences, batch_indices, idx, split_name):
+    def process_chunk(self, base_path, tokenized_sequences, batch_indices, idx, split_name):
         token_batch_fn = TokenizeBatch(self.tokenizer)
-        # processed_batches = [token_batch_fn([tokenized_sequences[i] for i in batch]) for batch in (batch_indices-self.accumulated_length)]
         processed_batches = [
             token_batch_fn([tokenized_sequences[i] for i in [idx - self.accumulated_length for idx in batch]]) for batch
             in batch_indices]
@@ -154,24 +150,24 @@ class BatchedDataset(object):
         processed_batches = [processed_batches[i] for i in permutation]
         batch_indices = [batch_indices[i] for i in permutation]
 
-        processed_filename = f"{split_name}_intermediate_processed_dataset_{idx}.pkl"
+        processed_filename = f"{base_path}/{split_name}_intermediate_processed_dataset_{idx}.pkl"
         with open(processed_filename, 'wb') as f:
             pickle.dump(processed_batches, f)
         print(f'Finish padding and masking for {idx} sequences')
-        with open(f'{split_name}_intermediate_checkpoint_batches_{idx}.pkl', 'wb') as f:
+        with open(f'{base_path}/{split_name}_intermediate_checkpoint_batches_{idx}.pkl', 'wb') as f:
             pickle.dump(batch_indices, f)
 
         del token_batch_fn, processed_batches, batch_indices, tokenized_sequences
         gc.collect()
 
-    def save_checkpoint(self, idx, batch_indices=None, split_name=None):
+    def save_checkpoint(self, idx, base_path, batch_indices=None, split_name=None):
         print(f'Start generating tokens for {idx} sequences')
         # current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        with open(f'{split_name}_intermediate_checkpoint_{idx}.pkl', 'wb') as f:
+        with open(f'{base_path}/{split_name}_intermediate_checkpoint_{idx}.pkl', 'wb') as f:
             pickle.dump((self.tokenized_sequences, self.accumulated_length), f)
 
         print(f'Start padding and masking for {idx} sequences {len(batch_indices)} batches')
-        self.process_chunk(self.tokenized_sequences, batch_indices, idx, split_name)
+        self.process_chunk(base_path, self.tokenized_sequences, batch_indices, idx, split_name)
 
         # clear up memory for the multiprocessing
         self.tokenized_sequences.clear()
@@ -179,24 +175,24 @@ class BatchedDataset(object):
         print(f'Finish generating tokens for {idx} strs')
 
     @staticmethod
-    def get_latest_checkpoint_sequence(split_name):
-        ckpt_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_*.pkl'
+    def get_latest_checkpoint_sequence(base_path, split_name):
+        ckpt_path = f'{base_path}/{split_name}_intermediate_checkpoint_*.pkl'
         cache_list = glob.glob(ckpt_path)
         if cache_list:
             cache_fname = max(cache_list, key=os.path.getctime)
             # since we might need the processed dataset, revert the system to redo this checkpoint
             index = int(cache_fname.split('_')[4].split('.')[0]) - 1000000
             # tell the model: original sequences up to this index is processed already, start from 0 for subsets again
-            fname = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_{index}.pkl'
+            fname = f'{base_path}/{split_name}_intermediate_checkpoint_{index}.pkl'
             return index, fname
         else:
             return 0, None
 
     @staticmethod
-    def combine_checkpoints(split_name, batch_path):
-        dataset_ckpt_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_processed_dataset_*.pkl'
-        batch_idx_ckpt_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_intermediate_checkpoint_batches_*.pkl'
-        output_file = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_combined_tokenized_sequences.hf'
+    def combine_checkpoints(base_path, split_name, batch_path):
+        dataset_ckpt_path = f'{base_path}/{split_name}_intermediate_processed_dataset_*.pkl'
+        batch_idx_ckpt_path = f'{base_path}/{split_name}_intermediate_checkpoint_batches_*.pkl'
+        output_file = f'{base_path}/{split_name}_combined_tokenized_sequences.hf'
 
         all_attention_masks = []
         all_input_ids = []
@@ -226,17 +222,10 @@ class BatchedDataset(object):
                 batch_indices = pickle.load(f)
                 all_batch_indices.extend(batch_indices)
 
-        # Save the combined batch indices (if needed)
+        # Save the combined batch indices
         with open(f"{batch_path}_{split_name}_Batch_indices.pkl",
                   "wb") as f:
             pickle.dump(all_batch_indices, f)
-
-    def load_combined_dataset(self, split_name, combined_file):
-        self.processed_sequences = load_from_disk(combined_file)
-        print('Load combined processed sequences from ', combined_file)
-        # with open(f"/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_Batch_indices.pkl", 'rb') as f:
-        # self.batch_indices = pickle.load(f)
-        # print('Loaded batch indices')
 
     def get_batch_indices(self, extra_toks_per_seq=1, offset=0):
         sizes = [(len(tokens), i) for i, tokens in enumerate(self.tokenized_sequences)]
@@ -270,29 +259,105 @@ class BatchedDataset(object):
         _flush_current_buf()
         return batches
 
+
+class DynamicBatchingDataset(Dataset):
+    """
+    Process dynamically batched datasets of Huggingface Datasets object. Need special handling since in the previous
+    steps, each batch (row in the Datasets object) is already processed for per batch loading
+    Usage:
+    train_dataset = DynamicBatchingDataset(small_dataset_dict['train'], batch_indices_train)
+    train_dataloader = DataLoader(train_dataset, batch_size=2, shuffle=False,
+                        collate_fn=DynamicBatchingDataset.dynamic_padding_collate_fn)
+    """
+
+    def __init__(self, dataset_dict, batch_indices):
+        print('Initializing dataset...')
+        self.dataset_dict = dataset_dict
+        self.batch_indices = batch_indices  # This is mainly for informational purposes, if needed.
+
     def __len__(self):
-        return len(self.processed_sequences)
+        return len(self.dataset_dict['attention_mask'])  # assuming each entry in dataset_dict represents a batch
 
     def __getitem__(self, idx):
-        return self.processed_sequences[idx]
+        # Directly retrieve the batch using the index
+        """returns [seq_number, token_length], return one batch at a time"""
+        attention_mask = torch.tensor(self.dataset_dict['attention_mask'][idx])
+        input_ids = torch.tensor(self.dataset_dict['input_ids'][idx])
+        label = torch.tensor(self.dataset_dict['labels'][idx])
+
+        return {
+            'attention_mask': attention_mask,
+            'input_ids': input_ids,
+            'labels': label
+        }
+
+    @staticmethod
+    def dynamic_padding_collate_fn(batch):
+        """
+        Args:
+            batch: preprocessed datasets, already go through dynamic batching, so each batch is upto ~maximum_seq_length,
+            eg. 512 tokens length.
+            That resulted in each batch input shapes being different, in both sequence numbers and sequence lengths,
+            (although sequence lengths being constant within a batch).
+            For DDP, when distribute dataset between GPUs, the shapes of input have to be the same, therefore, need
+            extra paddings when loading datasets to the GPUs.
+
+        Returns:
+            Dynamically padded tokens, according to the maximum length of the batch across all the batches
+            loaded to the GPUs per iteration.
+            Slower but more efficient than just pad to the maximum limit.
+        """
+
+        # Extract sequences from the batch
+        attention_masks = [item['attention_mask'] for item in batch]
+        input_ids = [item['input_ids'] for item in batch]
+        labels = [item['labels'] for item in batch]
+
+        # Flatten the sequences and then pad them
+        attention_masks_flat = [sequence for batch_item in attention_masks for sequence in batch_item]
+        input_ids_flat = [sequence for batch_item in input_ids for sequence in batch_item]
+        labels_flat = [sequence for batch_item in labels for sequence in batch_item]
+
+        # Pad sequences
+        attention_masks_padded = pad_sequence(attention_masks_flat, batch_first=True)
+        input_ids_padded = pad_sequence(input_ids_flat, batch_first=True)
+        labels_padded = pad_sequence(labels_flat, batch_first=True, padding_value=-100)
+
+        return {
+            'attention_mask': attention_masks_padded,
+            'input_ids': input_ids_padded,
+            'labels': labels_padded
+        }
 
 
 class PretrainDataset(pl.LightningDataModule):
     def __init__(self,
-                 # batch_size: int = 1,
+                 tokenizer_path,
+                 input_dataset_path,
+                 output_dataset_path,
+                 num_workers,
+                 batch_size,
                  target: str = 'protein',
                  max_sequence_length: int = 512,
-                 vocab_size='8k'):
+                 vocab_size='8k',
+                 ):
         super().__init__()
 
+        self.val_dataset = None
+        self.train_dataset = None
+        self.intermediate_data_path = str(f'{output_dataset_path}/intermediate')
+        if not os.path.exists(self.intermediate_data_path):
+            os.makedirs(self.intermediate_data_path)
         self.vocab_size = vocab_size
+        self.num_workers = num_workers
         self.target = target
-        self.original_data = self.retrieve_data(self.target)
-        self.tokenizer = self.tokenizer_generation(self.target, self.vocab_size)
+        self.original_data = self.retrieve_data(input_dataset_path, self.target)
+        self.tokenizer = self.tokenizer_generation(tokenizer_path, self.target, self.vocab_size)
         self.max_sequence_length = max_sequence_length
-        #self.dataset_path = f'/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_Dataset.hf'
-        self.dataset_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_1million_dataset.hf'
-        #self.batch_path = f'/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}'
+        self.batch_size = batch_size  # used for DDP, determines how many batches load simultaneously \
+                                    # to multiple GPUs at a time. Not used for tokenization.
+        self.dataset_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_1million_dataset.hf'
+        self.batch_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}'
 
         if not os.path.exists(self.dataset_path):
             print('Start generating tokenized datasets')
@@ -300,13 +365,10 @@ class PretrainDataset(pl.LightningDataModule):
             self.save_tokenized_data()
         else:
             print('Load processed datasets')
-            # with open(self.dataset_path, 'rb') as f:
-            # self.dataset = pickle.load(f)
             self.dataset = load_from_disk(self.dataset_path)
-        # self.batch_size = batch_size
 
     @staticmethod
-    def retrieve_data(target):
+    def retrieve_data(input_dataset_path, target):
         """
         input: transformers DATASET object, with train/valid split
         """
@@ -315,21 +377,17 @@ class PretrainDataset(pl.LightningDataModule):
                 loaded_data_lama = pickle.load(f)
             return loaded_data_lama
         elif target == 'protein':
-            # with open('/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split.pkl', 'rb') as f:
-            # loaded_data = pickle.load(f)
-            # return loaded_data
-            return load_from_disk('/data/rozen/home/e0833634/lama/data/swiss_2023_9/uniref50_random90split.hf')
+            return load_from_disk(f'{input_dataset_path}/uniref50_random90split.hf')
         else:
             raise ValueError('Have not prepared dataset for this target')
 
     @staticmethod
-    def tokenizer_generation(target, vocab_size):
+    def tokenizer_generation(tokenizer_path, target, vocab_size):
         if target == 'original':
             tokenizer = LlamaTokenizer.from_pretrained('hf-internal-testing/llama-tokenizer')
             tokenizer.pad_token = tokenizer.unk_token
             return tokenizer
         elif target == 'protein':
-            tokenizer_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/'
             tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
             return tokenizer
         else:
@@ -338,28 +396,15 @@ class PretrainDataset(pl.LightningDataModule):
     def process_and_store_data(self, split_name):
         assert split_name in ["train", "valid"], "Invalid split_name. It should be either 'train' or 'valid'."
 
-        combined_tokenized_sequences_path = f'/data/rozen/home/e0833634/lama/protllama/batch_script/{split_name}_combined_tokenized_sequences.hf'
+        print("Tokenizing sequences...")
+        batched_dataset = BatchedDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
+        batched_dataset.tokenize_sequences(base_path=self.intermediate_data_path, split_name=split_name)
+        batched_dataset.combine_checkpoints(base_path=self.intermediate_data_path, split_name=split_name,
+                                            batch_path=self.batch_path)
 
-        if os.path.exists(combined_tokenized_sequences_path):
-            # print("Loading from combined dataset...")
-            # batched_dataset = BatchedDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
-            # batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
-            pass
-        else:
-            print("Tokenizing sequences...")
-            batched_dataset = BatchedDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
-            batched_dataset.tokenize_sequences(split_name=split_name)
-            batched_dataset.combine_checkpoints(split_name=split_name, batch_path=self.batch_path)
-            # batched_dataset.load_combined_dataset(split_name, combined_tokenized_sequences_path)
-
-            del batched_dataset
+        del batched_dataset
         gc.collect()
 
-        # batches_indices = batched_dataset.batch_indices # use batch indices from the loaded/processed dataset
-        # print(f"Processing {len(batches_indices)} batches for {split_name} split...")
-
-        # with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', "wb") as file:
-        # pickle.dump(batches_indices, file)
         print('Finish generating dataloader for ', split_name)
 
     # def shuffle_dataset(self, dataset):
@@ -368,12 +413,11 @@ class PretrainDataset(pl.LightningDataModule):
 
     def save_tokenized_data(self):
         for split_name in ['train', 'valid']:
-            # for split_name in ['train']:
             self.process_and_store_data(split_name)
         del self.original_data
 
-        train_combined_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/train_combined_tokenized_sequences.hf'
-        validation_combined_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/valid_combined_tokenized_sequences.hf'
+        train_combined_path = f'{self.intermediate_data_path}/train_combined_tokenized_sequences.hf'
+        validation_combined_path = f'{self.intermediate_data_path}/valid_combined_tokenized_sequences.hf'
 
         # Load them
         train_dataset = load_from_disk(train_combined_path)
@@ -393,66 +437,20 @@ class PretrainDataset(pl.LightningDataModule):
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)
 
-    def collate_fn(self, batch_indices, split_name):
-        # Given a list of indices, retrieve the corresponding batch from your HuggingFace Dataset
-        batch_ = {
-            'attention_mask': [self.dataset[split_name]['attention_mask'][i] for i in batch_indices[0]],
-            'input_ids': [self.dataset[split_name]['input_ids'][i] for i in batch_indices[0]],
-            'labels': [self.dataset[split_name]['labels'][i] for i in batch_indices[0]]
-        }
-        return batch_
-
-    def dataloader_preprocessing(self, split_name):
-        #ds = self.dataset[split_name]
-        with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', 'rb') as file:
-            batch_indices = pickle.load(file)
-        with open(self.batch_path + '_' + split_name + '_Batch_indices.pkl', 'rb') as file:
-            batch_indices = pickle.load(file)
-        return torch.utils.data.DataLoader(batch_indices, batch_size=1, pin_memory=True, shuffle=False, num_workers=20,
-                                           collate_fn=partial(self.collate_fn, split_name=split_name))
+    def setup(self, stage=None):
+        # Assign train/val datasets for use in dataloaders
+        with open(f"{self.batch_path}_train_Batch_indices.pkl", 'rb') as f:
+            batch_indices_train = pickle.load(f)
+        with open(f"{self.batch_path}_valid_Batch_indices.pkl", 'rb') as f:
+            batch_indices_val = pickle.load(f)
+        self.train_dataset = DynamicBatchingDataset(self.dataset['train'], batch_indices_train)
+        # Repeat similar steps for validation and test datasets if needed
+        self.val_dataset = DynamicBatchingDataset(self.dataset['valid'], batch_indices_val)
 
     def train_dataloader(self):
-        # if 'train' in self.dataset.keys():
-        # train_ds = self.dataset['train']
-        # dataset = BatchedDataset(train_ds, self.tokenizer, self.max_sequence_length)
-        # batches = dataset.get_batch_indices()
-        # return torch.utils.data.DataLoader(dataset, collate_fn=TokenizeBatch(self.tokenizer),
-        # batch_sampler=batches, pin_memory=True)
-        # return DataLoader(train_ds, batch_size=self.batch_size, shuffle=False,
-        # drop_last=True,
-        # collate_fn=partial(self.tokenize_batch))
-        # elif 'train' not in self.dataset.keys():
-        # raise ValueError('Did not detect training dataset')
-        return self.dataloader_preprocessing('train')
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          collate_fn=DynamicBatchingDataset.dynamic_padding_collate_fn)
 
     def val_dataloader(self):
-        # if 'valid' in self.dataset.keys():
-        # val_ds = self.dataset['valid']
-        # dataset = BatchedDataset(val_ds, self.tokenizer, self.max_sequence_length)
-        # batches = dataset.get_batch_indices()
-        # return torch.utils.data.DataLoader(dataset, collate_fn=TokenizeBatch(self.tokenizer),
-        # batch_sampler=batches, pin_memory=True)
-        # return DataLoader(val_ds, batch_size=self.batch_size, shuffle=False,
-        # drop_last=False,
-        # collate_fn=partial(self.tokenize_batch))
-        # else:
-        # valid_dict = {'text': [
-        # "Since it was initiated by the Brazil workers' party~\cite{wainwright2003making} in the 90s, Participatory budgeting (PB)~\cite{cabannes2004participatory}"]}
-        # val_ds = Dataset.from_dict(valid_dict)
-        # return DataLoader(val_ds, batch_size=self.batch_size, shuffle=False,
-        # drop_last=False,
-        # collate_fn=partial(self.tokenize_batch))
-        return self.dataloader_preprocessing('valid')
-
-
-if __name__ == '__main__':
-    dm = PretrainDataset(max_sequence_length=512)
-    # make sure dataset has "training" key
-    print(type(dm.dataset['train']))
-    print(len(dm.dataset['train']))
-    print(len(dm.dataset['train']))
-    dataloader = dm.train_dataloader()
-    for batch_id, batch in enumerate(dataloader):
-        print(batch_id, batch)
-        if batch_id == 3:
-            break
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          collate_fn=DynamicBatchingDataset.dynamic_padding_collate_fn)

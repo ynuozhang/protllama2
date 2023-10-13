@@ -6,11 +6,8 @@ from transformers.models.llama.modeling_llama import LlamaForCausalLM
 from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
 from transformers import get_cosine_schedule_with_warmup
-import os
-import logging as log
-import glob
+import sentencepiece as spm
 from argparse import ArgumentParser
-from protllama.bin.data import PretrainDataset
 import torch
 
 
@@ -19,9 +16,22 @@ class pretrainLlama(pl.LightningModule):
         super(pretrainLlama, self).__init__()
         self.save_hyperparameters()
         self.hparam = hparam  # need to contain epoch, target, date, learning rate, batch_size, num_frozen_epochs
-        self.tokenizer = PretrainDataset(self.hparam.target, self.hparam.max_position_embeddings, self.hparam.vocab_size).tokenizer
         self.MODEL_CONFIGS = self.retrieve_config()
         self.__build_model()
+        self.tokenizer = self.tokenizer_generation(self.hparam.target, self.hparam.vocab_size)
+
+    @staticmethod
+    def tokenizer_generation(target, vocab_size):
+        if target == 'original':
+            tokenizer = LlamaTokenizer.from_pretrained('hf-internal-testing/llama-tokenizer')
+            tokenizer.pad_token = tokenizer.unk_token
+            return tokenizer
+        elif target == 'protein':
+            tokenizer_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/'
+            tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
+            return tokenizer
+        else:
+            raise ValueError('Have not prepared tokenizer for this target')
 
     def retrieve_config(self):
         """ return transformers DATASET object"""
@@ -36,29 +46,17 @@ class pretrainLlama(pl.LightningModule):
                                           hidden_size=self.hparam.hidden_size,
                                           transformers_version=transformers.__version__,
                                           intermediate_size=self.hparam.intermediate_size,
+                                          num_hidden_layers=self.hparam.num_hidden_layers,
                                           vocab_size=int(self.hparam.vocab_size.rstrip('k')) * 1000)}
             print(config_dict['protllama2'])
             return config_dict['protllama2']
         else:
             raise ValueError('Have not prepared dataset for this target')
 
-    #def check_point_check(self):
-        #os.mkdir('/data/rozen/home/e0833634/transformerDENV/result/model_cache/%s' % self.hparam.date)
-        # try to load from checkpoints
-        #cache_list = glob.glob(
-            #'/data/rozen/home/e0833634/transformerDENV/result/model_cache/%s/*' % self.hparam.date)
-        #try:
-            # get the most recently saved checkpoint
-            #cache_fname = max(cache_list, key=os.path.getctime)
-            #log.info(f'\n-- model at check point is loaded successfully')
-            #return FtESM1b.load_from_checkpoint(cache_fname)
-        #except FileNotFoundError:
-            #log.info(f'\n-- Did not found any checkpoints.')
-
     def __build_model(self) -> None:
         """start model building, can add customized classification head"""
         self.model = LlamaForCausalLM(self.MODEL_CONFIGS)
-        print(self.model.lm_head.weight)
+        #print(self.model.lm_head.weight)
 
     def configure_optimizers(self):
         """set learning rates"""
@@ -67,7 +65,7 @@ class pretrainLlama(pl.LightningModule):
             optimizer = AdamW(parameters, lr=self.hparam.learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
             lr_schedulers = {
                 "scheduler": get_linear_schedule_with_warmup(optimizer,
-                                                            num_warmup_steps=100,
+                                                            num_warmup_steps=2000,
                                                             num_training_steps=self.hparam.epoch * self.hparam.train_dataset_length),
                 "name": 'learning_rate_logs'
             }
@@ -96,12 +94,10 @@ class pretrainLlama(pl.LightningModule):
         Returns:
         dict with model outputs (loss, logits, hidden layer, attention)
         """
-        print(inputs)
         return self.model(**inputs)
 
-    def training_step(self, batch, batch_nb: int, verbose=True):
+    def training_step(self, batch, batch_nb: int, verbose=False):
         outputs = self.forward(**batch)
-        print(outputs)
         loss_train = outputs[0]
 
         # Compute the perplexity
@@ -109,8 +105,7 @@ class pretrainLlama(pl.LightningModule):
 
         # Accuracy computation
         # Shifting
-        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(
-            dim=-1).cpu()  # Ensure outputs and argmax result are on CPU
+        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(dim=-1).cpu()  # Ensure outputs and argmax result are on CPU
         if verbose:
             print(shift_logits)
 
@@ -127,9 +122,10 @@ class pretrainLlama(pl.LightningModule):
             print(acc_train)
 
         # Log
-        self.log('train_loss', loss_train, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        self.log('train_accuracy', acc_train, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_loss', loss_train, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('train_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True,
+                 sync_dist=True)
+        self.log('train_accuracy', acc_train, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
         return loss_train
 
@@ -158,9 +154,10 @@ class pretrainLlama(pl.LightningModule):
         acc_val = ((shift_logits == shift_labels) & non_padding_mask).sum().item() / non_padding_mask.sum().item()
 
         # Log
-        self.log('val_loss', loss_val, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        self.log('val_accuracy', acc_val, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_loss', loss_val, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_accuracy', acc_val, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+
         return loss_val
 
     @classmethod
@@ -169,8 +166,7 @@ class pretrainLlama(pl.LightningModule):
         parser.add_argument('--learning_rate', type=float, default=3e-4, help='Learning rate for Adam optimizer')
         parser.add_argument('--scheduler', type=str, default='linear', help='Learning rate scheduler, either linear '
                                                                             'or cosine')
-        parser.add_argument('--epoch', type=int, default=1, help='number of epochs for the training')
-        #parser.add_argument('--batch_size', type=int, default=2, help='Batch sizes, sequence number per batch')
+        parser.add_argument('--epoch', type=int, default=50, help='number of epochs for the training')
         return parser
 
 
