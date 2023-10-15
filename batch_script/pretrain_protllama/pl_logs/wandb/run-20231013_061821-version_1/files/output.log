@@ -1,0 +1,31 @@
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+Global seed set to 42
+Traceback (most recent call last):
+  File "/home/a03-yzhang/projects/protllama2/bin/main.py", line 76, in <module>
+    model = pretrainLlama(hparam)
+  File "/home/a03-yzhang/projects/protllama2/bin/model.py", line 21, in __init__
+    self.tokenizer = self.tokenizer_generation(self.hparam.target, self.hparam.vocab_size)
+  File "/home/a03-yzhang/projects/protllama2/bin/model.py", line 30, in tokenizer_generation
+    tokenizer = spm.SentencePieceProcessor(model_file=self.hparam.tokenizer_path + "protein_%s.model" % (vocab_size))
+NameError: name 'self' is not defined

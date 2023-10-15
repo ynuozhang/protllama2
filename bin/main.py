@@ -1,7 +1,7 @@
 import argparse
 import os
-from protllama.bin.model import *
-from protllama.bin.data import PretrainDataset
+from model import *
+from data import PretrainDataset
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, TQDMProgressBar, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger

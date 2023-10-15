@@ -281,6 +281,9 @@ class DynamicBatchingDataset(Dataset):
     def __getitem__(self, idx):
         # Directly retrieve the batch using the index
         """returns [seq_number, token_length], return one batch at a time"""
+        print(idx, type(idx))
+        print(len(self.dataset['attention_mask']))
+        print(len(self.dataset['attention_mask'][0]))
         attention_mask = torch.tensor(self.dataset_dict['attention_mask'][idx])
         input_ids = torch.tensor(self.dataset_dict['input_ids'][idx])
         label = torch.tensor(self.dataset_dict['labels'][idx])
@@ -356,7 +359,8 @@ class PretrainDataset(pl.LightningDataModule):
         self.max_sequence_length = max_sequence_length
         self.batch_size = batch_size  # used for DDP, determines how many batches load simultaneously \
                                     # to multiple GPUs at a time. Not used for tokenization.
-        self.dataset_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_1million_dataset.hf'
+        #self.dataset_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_frist_1million_dataset.hf'
+        self.dataset_path = '/home/a03-yzhang/projects/protllama2_data/data/1million_example/uniref50_random90split_8k_512_first_1million_dataset.hf'
         self.batch_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}'
 
         if not os.path.exists(self.dataset_path):
@@ -439,9 +443,11 @@ class PretrainDataset(pl.LightningDataModule):
 
     def setup(self, stage=None):
         # Assign train/val datasets for use in dataloaders
-        with open(f"{self.batch_path}_train_Batch_indices.pkl", 'rb') as f:
+        #with open(f"{self.batch_path}_train_Batch_indices.pkl", 'rb') as f:
+        with open('/home/a03-yzhang/projects/protllama2_data/data/1million_example/train_intermediate_checkpoint_batches_1000000.pkl', 'rb') as f:
             batch_indices_train = pickle.load(f)
-        with open(f"{self.batch_path}_valid_Batch_indices.pkl", 'rb') as f:
+        # with open(f"{self.batch_path}_valid_Batch_indices.pkl", 'rb') as f:
+        with open('/home/a03-yzhang/projects/protllama2_data/data/1million_example/valid_intermediate_checkpoint_batches_1000000.pkl', 'rb') as f:
             batch_indices_val = pickle.load(f)
         self.train_dataset = DynamicBatchingDataset(self.dataset['train'], batch_indices_train)
         # Repeat similar steps for validation and test datasets if needed

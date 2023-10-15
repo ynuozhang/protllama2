@@ -1,0 +1,370 @@
+Global seed set to 42
+wandb: Currently logged in as: ynuozhang (ynuoteam). Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.15.12
+wandb: Run data is saved locally in pretrain_protllama/pl_logs/wandb/run-20231013_062050-version_1
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Resuming run protein_Oct13_8k_pre-training_log
+wandb: ⭐️ View project at https://wandb.ai/ynuoteam/pretrain_protllama
+wandb: 🚀 View run at https://wandb.ai/ynuoteam/pretrain_protllama/runs/version_1
+Global seed set to 42
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+Running in `fast_dev_run` mode: will run the requested loop using 1 batch(es). Logging and checkpointing is suppressed.
+[rank: 0] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/8
+[rank: 1] Global seed set to 42
+[rank: 2] Global seed set to 42
+[rank: 3] Global seed set to 42
+[rank: 6] Global seed set to 42
+[rank: 5] Global seed set to 42
+[rank: 4] Global seed set to 42
+[rank: 7] Global seed set to 42
+[rank: 1] Global seed set to 42
+[rank: 3] Global seed set to 42
+[rank: 2] Global seed set to 42
+[rank: 6] Global seed set to 42
+[rank: 5] Global seed set to 42
+[rank: 4] Global seed set to 42
+[rank: 7] Global seed set to 42
+[rank: 1] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/8
+[rank: 3] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 3, MEMBER: 4/8
+[rank: 4] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 4, MEMBER: 5/8
+[rank: 2] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 2, MEMBER: 3/8
+[rank: 6] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 6, MEMBER: 7/8
+[rank: 7] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 7, MEMBER: 8/8
+[rank: 5] Global seed set to 42
+Initializing distributed: GLOBAL_RANK: 5, MEMBER: 6/8
+----------------------------------------------------------------------------------------------------
+distributed_backend=nccl
+All distributed processes registered. Starting with 8 processes
+----------------------------------------------------------------------------------------------------
+
+You are using a CUDA device ('NVIDIA A100-SXM4-80GB') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 3 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 4 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 7 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 6 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 5 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 2 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+
+  | Name  | Type             | Params
+-------------------------------------------
+0 | model | LlamaForCausalLM | 421 M 
+-------------------------------------------
+421 M     Trainable params
+0         Non-trainable params
+421 M     Total params
+1,684.804 Total estimated model params size (MB)
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Training: 0it [00:00, ?it/s]Training:   0%|          | 0/1 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/1 [00:00<?, ?it/s] Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1024,
+  "initializer_range": 0.02,
+  "intermediate_size": 2752,
+  "max_position_embeddings": 512,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 32,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 8000
+}
+
+Initializing dataset...
+Initializing dataset...
+Traceback (most recent call last):
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1132, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/opt/rh/rh-python38/root/usr/lib64/python3.8/multiprocessing/queues.py", line 107, in get
+    if not self._poll(timeout):
+  File "/opt/rh/rh-python38/root/usr/lib64/python3.8/multiprocessing/connection.py", line 261, in poll
+    return self._poll(timeout)
+  File "/opt/rh/rh-python38/root/usr/lib64/python3.8/multiprocessing/connection.py", line 428, in _poll
+    r = wait([self], timeout)
+  File "/opt/rh/rh-python38/root/usr/lib64/python3.8/multiprocessing/connection.py", line 935, in wait
+    ready = selector.select(timeout)
+  File "/opt/rh/rh-python38/root/usr/lib64/python3.8/selectors.py", line 415, in select
+    fd_event_list = self._selector.poll(timeout)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 247183) is killed by signal: Killed. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/a03-yzhang/projects/protllama2/bin/main.py", line 116, in <module>
+    trainer.fit(model, datamodule=dm)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/trainer/trainer.py", line 532, in fit
+    call._call_and_handle_interrupt(
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/trainer/call.py", line 42, in _call_and_handle_interrupt
+    return trainer.strategy.launcher.launch(trainer_fn, *args, trainer=trainer, **kwargs)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/strategies/launchers/subprocess_script.py", line 93, in launch
+    return function(*args, **kwargs)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/trainer/trainer.py", line 571, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/trainer/trainer.py", line 980, in _run
+    results = self._run_stage()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/trainer/trainer.py", line 1023, in _run_stage
+    self.fit_loop.run()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/loops/fit_loop.py", line 202, in run
+    self.advance()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/loops/fit_loop.py", line 355, in advance
+    self.epoch_loop.run(self._data_fetcher)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 133, in run
+    self.advance(data_fetcher)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 190, in advance
+    batch = next(data_fetcher)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/loops/fetchers.py", line 126, in __next__
+    batch = super().__next__()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/loops/fetchers.py", line 58, in __next__
+    batch = next(self.iterator)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/utilities/combined_loader.py", line 285, in __next__
+    out = next(self._iterator)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/utilities/combined_loader.py", line 65, in __next__
+    out[i] = next(self.iterators[i])
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1328, in _next_data
+    idx, data = self._get_data()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1294, in _get_data
+    success, data = self._try_get_data()
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1145, in _try_get_data
+    raise RuntimeError(f'DataLoader worker (pid(s) {pids_str}) exited unexpectedly') from e
+RuntimeError: DataLoader worker (pid(s) 247183) exited unexpectedly
+Training took 8646.30 seconds.
+
+Training took 8646.10 seconds.
+
+Training took 8645.81 seconds.
+
+Training took 8646.09 seconds.
+
+Training took 8645.92 seconds.
+
+Training took 8645.90 seconds.
+
+/home/a03-yzhang/.local/lib/python3.8/site-packages/pytorch_lightning/trainer/call.py:53: UserWarning: Detected KeyboardInterrupt, attempting graceful shutdown...
+  rank_zero_warn("Detected KeyboardInterrupt, attempting graceful shutdown...")
+Training took 8656.92 seconds.
+
+/opt/rh/rh-python38/root/usr/local/lib64/python3.8/site-packages/psutil/__init__.py:1973: RuntimeWarning: available memory stats couldn't be determined and was set to 0
+  ret = _psplatform.virtual_memory()
+wandb: Waiting for W&B process to finish... (success).
+Error in atexit._run_exitfuncs:
+Traceback (most recent call last):
+  File "/opt/rh/rh-python38/root/usr/lib64/python3.8/multiprocessing/popen_fork.py", line 27, in poll
+    pid, sts = os.waitpid(self.pid, flag)
+  File "/home/a03-yzhang/.local/lib/python3.8/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 247629) is killed by signal: Killed. 
+wandb: 
+wandb: Run history:
+wandb: training_time ▁
+wandb: 
+wandb: Run summary:
+wandb: training_time 8656.9196
+wandb: 
+wandb: 🚀 View run protein_Oct13_8k_pre-training_log at: https://wandb.ai/ynuoteam/pretrain_protllama/runs/version_1
+wandb: Synced 3 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: pretrain_protllama/pl_logs/wandb/run-20231013_062050-version_1/logs

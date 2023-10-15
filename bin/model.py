@@ -18,16 +18,15 @@ class pretrainLlama(pl.LightningModule):
         self.hparam = hparam  # need to contain epoch, target, date, learning rate, batch_size, num_frozen_epochs
         self.MODEL_CONFIGS = self.retrieve_config()
         self.__build_model()
-        self.tokenizer = self.tokenizer_generation(self.hparam.target, self.hparam.vocab_size)
+        self.tokenizer = self.tokenizer_generation(self.hparam.tokenizer_path, self.hparam.target, self.hparam.vocab_size)
 
     @staticmethod
-    def tokenizer_generation(target, vocab_size):
+    def tokenizer_generation(tokenizer_path, target, vocab_size):
         if target == 'original':
             tokenizer = LlamaTokenizer.from_pretrained('hf-internal-testing/llama-tokenizer')
             tokenizer.pad_token = tokenizer.unk_token
             return tokenizer
         elif target == 'protein':
-            tokenizer_path = '/data/rozen/home/e0833634/lama/protllama/batch_script/'
             tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
             return tokenizer
         else:
