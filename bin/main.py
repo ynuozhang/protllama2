@@ -28,7 +28,7 @@ def parse_args():
                         help='Number of workers for the DataLoader to load datasets')
     parser.add_argument('--num_hidden_layers', type=int, default=32,
                         help='Number of hidden layers')
-    parser.add_argument('--batch_size', type=int, default=8,
+    parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch sizes, sequence number per batch, used for DDP parallelism, number=no of GPUs')
     parser.add_argument('--max_position_embeddings', type=int, default=512,
                         help='Maximum length of the input')
@@ -98,6 +98,7 @@ lr_monitor = LearningRateMonitor(
 trainer = Trainer(
     devices=8,
     accelerator='gpu',
+    strategy='ddp',
     fast_dev_run=True,
     #limit_train_batches=3,
     max_epochs=hparam.epoch,

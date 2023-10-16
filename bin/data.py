@@ -281,18 +281,45 @@ class DynamicBatchingDataset(Dataset):
     def __getitem__(self, idx):
         # Directly retrieve the batch using the index
         """returns [seq_number, token_length], return one batch at a time"""
-        print(idx, type(idx))
-        print(len(self.dataset['attention_mask']))
-        print(len(self.dataset['attention_mask'][0]))
-        attention_mask = torch.tensor(self.dataset_dict['attention_mask'][idx])
-        input_ids = torch.tensor(self.dataset_dict['input_ids'][idx])
-        label = torch.tensor(self.dataset_dict['labels'][idx])
+        if isinstance(idx, int):
+            indices = [idx]
+        else:
+            indices = idx
+        
+        attention_masks = []
+        input_ids = []
+        labels = []
+        for index in indices:
+            attention_masks.append(torch.tensor(self.dataset_dict['attention_mask'][index]))
+            input_ids.append(torch.tensor(self.dataset_dict['input_ids'][index]))
+            labels.append(torch.tensor(self.dataset_dict['labels'][index]))
 
+        return {
+            'attention_mask': attention_masks,
+            'input_ids': input_ids,
+            'labels': labels
+        }
+
+    @staticmethod
+    def collate_fn(batch, verbose=False):
+        # Since DataLoader's batch_size is 1, batch[0] contains your pre-batched data
+        item = batch[0]
+        if verbose:
+            print(f"collate_fn batch shape: {item['input_ids'].shape}")
+
+        attention_mask = item['attention_mask']
+        input_ids = item['input_ids']
+        if verbose:
+            print(f"collate_fn input_ids shape after indexing: {input_ids.shape}")
+        labels = item['labels']
+
+        # These are already pre-padded, so you can directly return
         return {
             'attention_mask': attention_mask,
             'input_ids': input_ids,
-            'labels': label
+            'labels': labels
         }
+
 
     @staticmethod
     def dynamic_padding_collate_fn(batch):
@@ -360,7 +387,7 @@ class PretrainDataset(pl.LightningDataModule):
         self.batch_size = batch_size  # used for DDP, determines how many batches load simultaneously \
                                     # to multiple GPUs at a time. Not used for tokenization.
         #self.dataset_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}_frist_1million_dataset.hf'
-        self.dataset_path = '/home/a03-yzhang/projects/protllama2_data/data/1million_example/uniref50_random90split_8k_512_first_1million_dataset.hf'
+        self.dataset_path = '/home/a03-yzhang/projects/protllama2_data/data/1k_example/1k_dataset.hf'
         self.batch_path = f'{output_dataset_path}/uniref50_random90split_{self.vocab_size}_{self.max_sequence_length}'
 
         if not os.path.exists(self.dataset_path):
@@ -444,19 +471,21 @@ class PretrainDataset(pl.LightningDataModule):
     def setup(self, stage=None):
         # Assign train/val datasets for use in dataloaders
         #with open(f"{self.batch_path}_train_Batch_indices.pkl", 'rb') as f:
-        with open('/home/a03-yzhang/projects/protllama2_data/data/1million_example/train_intermediate_checkpoint_batches_1000000.pkl', 'rb') as f:
+        with open('/home/a03-yzhang/projects/protllama2_data/data/1k_example/train_intermediate_checkpoint_batches_1000.pkl', 'rb') as f:
             batch_indices_train = pickle.load(f)
         # with open(f"{self.batch_path}_valid_Batch_indices.pkl", 'rb') as f:
-        with open('/home/a03-yzhang/projects/protllama2_data/data/1million_example/valid_intermediate_checkpoint_batches_1000000.pkl', 'rb') as f:
+        with open('/home/a03-yzhang/projects/protllama2_data/data/1k_example/valid_intermediate_checkpoint_batches_1000.pkl', 'rb') as f:
             batch_indices_val = pickle.load(f)
         self.train_dataset = DynamicBatchingDataset(self.dataset['train'], batch_indices_train)
         # Repeat similar steps for validation and test datasets if needed
         self.val_dataset = DynamicBatchingDataset(self.dataset['valid'], batch_indices_val)
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
-                          collate_fn=DynamicBatchingDataset.dynamic_padding_collate_fn)
+        print('Building training dataloader')
+        return DataLoader(self.train_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
+                          collate_fn=DynamicBatchingDataset.collate_fn)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
-                          collate_fn=DynamicBatchingDataset.dynamic_padding_collate_fn)
+        print('Building validation dataloader')
+        return DataLoader(self.val_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
+                          collate_fn=DynamicBatchingDataset.collate_fn)

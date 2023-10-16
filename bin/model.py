@@ -96,6 +96,9 @@ class pretrainLlama(pl.LightningModule):
         return self.model(**inputs)
 
     def training_step(self, batch, batch_nb: int, verbose=False):
+        if verbose:
+            print(batch.keys())
+            print(f"training_step input_ids shape: {batch['input_ids'].shape}")
         outputs = self.forward(**batch)
         loss_train = outputs[0]
 
