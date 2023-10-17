@@ -13,24 +13,21 @@ image=$HOME_LOC/containers/pure_centos.sif
 DATE=$(date +%m_%d)
 
 singularity exec --nv  $image  scl enable rh-python38 bash << EOF > $LOG_LOC/$DATE.log >&1
-python3.8 $SCRIPT_LOC/bin/processing_ppi_csv.py \
-  $CSV_LOC
-  $DATA_LOC > Oct17_ppi_csv_prepare_set1.log 2>&1
 
 python3.8 $SCRIPT_LOC/bin/main.py \
   Oct17 \
   ppi \
-  1 \
+  3 \
   $DATA_LOC \
   $OUTPUT_LOC \
   $TOKENIZER_LOC \
-  --num_workers 32 \
-  --num_hidden_layers 32\
+  --num_workers 8 \
+  --num_hidden_layers 28\
   --batch_size 1 \
   --max_position_embeddings 4096 \
-  --vocab_size 52k \
-  --hidden_size 4096 \
-  --intermediate_size 11008 > Oct17_ppi_pretrain_set1.log 2>&1
+  --vocab_size 50k \
+  --hidden_size 2048 \
+  --intermediate_size 6880 > Oct17_ppi_pretrain_set3_full_fsdp.log 2>&1
 
 exit
 

@@ -1,11 +1,15 @@
 import argparse
 import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:4096'
 from model import *
 from data import PretrainDataset
 from ppi_data import PretrainPPIDataset
-from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, TQDMProgressBar, LearningRateMonitor
-from pytorch_lightning.loggers import WandbLogger
+import torch
+import torch.nn as nn
+from lightning.pytorch.strategies import FSDPStrategy
+from lightning import Trainer, seed_everything
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Timer, TQDMProgressBar, LearningRateMonitor
+from lightning.pytorch.loggers import WandbLogger
 import time
 
 # set wandb offline on HPC
@@ -75,8 +79,7 @@ elif hparam.target == 'ppi':
         max_sequence_length=hparam.max_position_embeddings,
     )
 
-train_loader = dm.train_dataloader()
-hparam.train_dataset_length = len(train_loader)
+hparam.train_dataset_length = len(dm.dataset['train'])
 training_log_path = str('pretrain_protllama/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
@@ -86,7 +89,9 @@ logger = WandbLogger(project="pretrain_protllama",
                      job_type='model-training',
                      group=f'pretrain_protllama2_{hparam.vocab_size}_{hparam.max_position_embeddings}',
                      id=f'version_{hparam.attempts}')
+
 seed_everything(42)
+
 model = pretrainLlama(hparam)
 early_stop_callback = EarlyStopping(
     monitor="val_perplexity",
@@ -109,11 +114,14 @@ checkpoint_callback = ModelCheckpoint(
 lr_monitor = LearningRateMonitor(
     logging_interval='epoch'
 )
+policy = {nn.TransformerEncoderLayer, nn.TransformerDecoderLayer}
+strategy = FSDPStrategy(auto_wrap_policy=policy)
 trainer = Trainer(
     devices=8,
-    accelerator='gpu',
-    strategy='ddp',
-    fast_dev_run=True,
+    accelerator='cuda',
+    strategy=strategy,
+    #fast_dev_run=True,
+    precision=16,
     #limit_train_batches=3,
     max_epochs=hparam.epoch,
     logger=logger,
@@ -123,14 +131,12 @@ trainer = Trainer(
     deterministic=True,
     enable_model_summary=True
 )
-
+timer = Timer()
 # automatic garbage collection
 import gc
 gc.collect()
-start_time = time.time()
 trainer.fit(model, datamodule=dm)
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Training took {elapsed_time:.2f} seconds.")
-logger.log_metrics({"training_time": elapsed_time})
+trainer.print(torch.cuda.memory_summary())
+timer.time_elapsed('train')
+timer.time_elapsed('validate')
 print(trainer.checkpoint_callback.best_model_path)

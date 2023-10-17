@@ -396,7 +396,10 @@ class PretrainDataset(pl.LightningDataModule):
             self.save_tokenized_data()
         else:
             print('Load processed datasets')
-            self.dataset = load_from_disk(self.dataset_path)
+            dataset = load_from_disk(self.dataset_path)
+            self.dataset = DatasetDict({
+                'train': dataset['train'].select(range(10)),
+                'valid': dataset['valid'].select(range(10))})
 
     @staticmethod
     def retrieve_data(input_dataset_path, target):
@@ -456,14 +459,12 @@ class PretrainDataset(pl.LightningDataModule):
 
         print('Start combining datasets')
 
-        combined_datasets = DatasetDict({
+        self.dataset = DatasetDict({
             'train': train_dataset,
             'valid': validation_dataset
         })
 
         # If you want to save the combined dataset:
-        combined_datasets.save_to_disk(self.dataset_path)
-        del combined_datasets
         gc.collect()
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)

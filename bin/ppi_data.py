@@ -1,6 +1,6 @@
 import sys
 import glob
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import pickle
 from datasets import Dataset, DatasetDict, load_from_disk, concatenate_datasets
@@ -13,13 +13,11 @@ import os
 from multiprocessing import Pool
 from tqdm import tqdm
 from datetime import datetime
-from pytorch_lightning import seed_everything
 import random
 import gc
 import h5py
 import numpy as np
 
-seed_everything(42)
 
 global_tokenizer = None
 
@@ -289,15 +287,19 @@ class PretrainPPIDataset(pl.LightningDataModule):
         self.batch_size = 1  # used for DDP, determines how many batches load simultaneously \
                                     # to multiple GPUs at a time. Not used for tokenization.
         self.dataset_path = f'{output_dataset_path}/ppi_8000_{self.vocab_size}_{self.max_sequence_length}_dataset.hf'
-        #self.dataset_path = '/home/a03-yzhang/projects/protllama2_data/data/1k_example/1k_dataset.hf'
 
         if not os.path.exists(self.dataset_path):
             print('Start generating tokenized datasets')
             self.tokenized_data = {}
             self.save_tokenized_data()
+            self.dataset = load_from_disk(self.dataset_path, keep_in_memory=False)
         else:
             print('Load processed datasets')
-            self.dataset = load_from_disk(self.dataset_path)
+            self.dataset = load_from_disk(self.dataset_path, keep_in_memory=False)
+            # small test set if needed
+            #self.dataset = DatasetDict({
+               # 'train': dataset['train'].select(range(10)),
+               # 'valid': dataset['valid'].select(range(10))})
 
     @staticmethod
     def retrieve_data(input_dataset_path, target):
@@ -363,7 +365,7 @@ class PretrainPPIDataset(pl.LightningDataModule):
 
         # If you want to save the combined dataset:
         combined_datasets.save_to_disk(self.dataset_path)
-        del combined_datasets
+        del combined_datasets, train_dataset, validataion_dataset
         gc.collect()
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)
@@ -375,16 +377,18 @@ class PretrainPPIDataset(pl.LightningDataModule):
         self.train_dataset = DynamicBatchingDataset(self.dataset['train'])
         # Repeat similar steps for validation and test datasets if needed
         self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
-
+        del self.dataset
+        gc.collect()
+        
     def train_dataloader(self):
         print('Building training dataloader')
         return DataLoader(self.train_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
-                          collate_fn=DynamicBatchingDataset.collate_fn)
+                          collate_fn=DynamicBatchingDataset.collate_fn, pin_memory=True)
 
     def val_dataloader(self):
         print('Building validation dataloader')
         return DataLoader(self.val_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
-                          collate_fn=DynamicBatchingDataset.collate_fn)
+                          collate_fn=DynamicBatchingDataset.collate_fn, pin_memory=True)
 
 if __name__=='__main__':
     dm = PretrainPPIDataset(

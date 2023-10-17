@@ -1,5 +1,5 @@
 """Use pytorch-lightning to add customized head later (Oct 6)"""
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import transformers
 from transformers.models.llama.configuration_llama import LlamaConfig
 from transformers.models.llama.modeling_llama import LlamaForCausalLM
@@ -17,7 +17,7 @@ class pretrainLlama(pl.LightningModule):
         self.save_hyperparameters()
         self.hparam = hparam  # need to contain epoch, target, date, learning rate, batch_size, num_frozen_epochs
         self.MODEL_CONFIGS = self.retrieve_config()
-        self.__build_model()
+        self.model = None
         self.tokenizer = self.tokenizer_generation(self.hparam.tokenizer_path, self.hparam.target, self.hparam.vocab_size)
 
     @staticmethod
@@ -52,8 +52,10 @@ class pretrainLlama(pl.LightningModule):
         else:
             raise ValueError('Have not prepared dataset for this target')
 
-    def __build_model(self) -> None:
+    def configure_model(self):
         """start model building, can add customized classification head"""
+        if self.model is not None:
+            return
         self.model = LlamaForCausalLM(self.MODEL_CONFIGS)
         #print(self.model.lm_head.weight)
 
@@ -103,16 +105,16 @@ class pretrainLlama(pl.LightningModule):
         loss_train = outputs[0]
 
         # Compute the perplexity
-        perplexity = torch.exp(outputs[0].cpu())  # Ensure outputs are on CPU
+        perplexity = torch.exp(loss_train.detach())  # Ensure outputs are on CPU
 
         # Accuracy computation
         # Shifting
-        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(dim=-1).cpu()  # Ensure outputs and argmax result are on CPU
+        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(dim=-1)  # Ensure outputs and argmax result are on CPU
         if verbose:
             print(shift_logits)
 
         # Assuming 'labels' is a key in batch containing true token IDs
-        shift_labels = batch['labels'][..., 1:].contiguous().cpu()  # Move labels to CPU
+        shift_labels = batch['labels'][..., 1:].contiguous()  # Move labels to CPU
         if verbose:
             print(shift_logits)
 
@@ -125,7 +127,7 @@ class pretrainLlama(pl.LightningModule):
 
         # Log
         self.log('train_loss', loss_train, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('train_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True,
+        self.log('train_perplexity', perplexity.item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
                  sync_dist=True)
         self.log('train_accuracy', acc_train, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
@@ -137,18 +139,18 @@ class pretrainLlama(pl.LightningModule):
             - dictionary passed to the validation_end function.
         """
         outputs = self.forward(**batch)
-        loss_val = outputs[0].cpu()
+        loss_val = outputs[0]
 
         # Compute the perplexity
-        perplexity = torch.exp(loss_val)  # Ensure outputs are on CPU
+        perplexity = torch.exp(loss_val.detach())  # Ensure outputs are on CPU
 
         # Accuracy computation
         # Shifting
         shift_logits = outputs[1][..., :-1, :].contiguous().argmax(
-            dim=-1).cpu()  # Ensure outputs and argmax result are on CPU
+            dim=-1)  # Ensure outputs and argmax result are on CPU
 
         # Assuming 'labels' is a key in batch containing true token IDs
-        shift_labels = batch['labels'][..., 1:].contiguous().cpu()  # Move labels to CPU
+        shift_labels = batch['labels'][..., 1:].contiguous()  # Move labels to CPU
 
         non_padding_mask = shift_labels != -100
 
@@ -157,7 +159,7 @@ class pretrainLlama(pl.LightningModule):
 
         # Log
         self.log('val_loss', loss_val, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('val_perplexity', perplexity, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_perplexity', perplexity.item(), on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         self.log('val_accuracy', acc_val, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
         return loss_val
