@@ -2,6 +2,7 @@ import argparse
 import os
 from model import *
 from data import PretrainDataset
+from ppi_data import PretrainPPIDataset
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, TQDMProgressBar, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
@@ -51,24 +52,37 @@ def parse_args():
 
 
 hparam = parse_args()
-dm = PretrainDataset(
-    input_dataset_path=hparam.input_dataset_path,
-    output_dataset_path=hparam.output_dataset_path,
-    tokenizer_path=hparam.tokenizer_path,
-    num_workers=hparam.num_workers,
-    batch_size=hparam.batch_size,
-    vocab_size=hparam.vocab_size,
-    target=hparam.target,
-    max_sequence_length=hparam.max_position_embeddings,
+if hparam.target == 'protein':
+    dm = PretrainDataset(
+        input_dataset_path=hparam.input_dataset_path,
+        output_dataset_path=hparam.output_dataset_path,
+        tokenizer_path=hparam.tokenizer_path,
+        num_workers=hparam.num_workers,
+        batch_size=hparam.batch_size,
+        vocab_size=hparam.vocab_size,
+        target=hparam.target,
+        max_sequence_length=hparam.max_position_embeddings,
+        )
+elif hparam.target == 'ppi':
+    dm = PretrainPPIDataset(
+        input_dataset_path=hparam.input_dataset_path,
+        output_dataset_path=hparam.output_dataset_path,
+        tokenizer_path=hparam.tokenizer_path,
+        num_workers=hparam.num_workers,
+        batch_size=hparam.batch_size,
+        vocab_size=hparam.vocab_size,
+        target=hparam.target,
+        max_sequence_length=hparam.max_position_embeddings,
     )
-# make sure dataset has "training" key
-hparam.train_dataset_length = len(dm.dataset['train'])
+
+train_loader = dm.train_dataloader()
+hparam.train_dataset_length = len(train_loader)
 training_log_path = str('pretrain_protllama/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
 logger = WandbLogger(project="pretrain_protllama",
                      name=f"{hparam.target}_{hparam.date}_{hparam.vocab_size}_pre-training_log", #display on the web
-                     save_dir='pretrain_protllama/pl_logs/',
+                     save_dir=f'pretrain_protllama_{hparam.target}/pl_logs/',
                      job_type='model-training',
                      group=f'pretrain_protllama2_{hparam.vocab_size}_{hparam.max_position_embeddings}',
                      id=f'version_{hparam.attempts}')
@@ -81,7 +95,7 @@ early_stop_callback = EarlyStopping(
     verbose=True,
     mode="min",
 )
-training_model_path = str('pretrain_protllama/pl_model_cache/')
+training_model_path = str(f'pretrain_protllama_{hparam.target}/pl_model_cache/')
 if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(

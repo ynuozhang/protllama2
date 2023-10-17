@@ -26,7 +26,7 @@ class pretrainLlama(pl.LightningModule):
             tokenizer = LlamaTokenizer.from_pretrained('hf-internal-testing/llama-tokenizer')
             tokenizer.pad_token = tokenizer.unk_token
             return tokenizer
-        elif target == 'protein':
+        elif target == 'protein' or target == 'ppi':
             tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
             return tokenizer
         else:
@@ -39,7 +39,7 @@ class pretrainLlama(pl.LightningModule):
                                              hidden_size=self.hparam.hidden_size,
                                              intermediate_size=self.hparam.intermediate_size)}
             return config_dict['7b']
-        elif self.hparam.target == 'protein':
+        elif self.hparam.target == 'protein' or self.hparam.target == 'ppi':
             config_dict = {
                 'protllama2': LlamaConfig(max_position_embeddings=self.hparam.max_position_embeddings,  # maximum length
                                           hidden_size=self.hparam.hidden_size,
