@@ -126,10 +126,10 @@ class pretrainLlama(pl.LightningModule):
             print(acc_train)
 
         # Log
-        self.log('train_loss', loss_train, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('train_perplexity', perplexity.item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
+        self.log('train_loss', loss_train, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('train_perplexity', perplexity.item(), on_step=True, on_epoch=True, prog_bar=True, logger=True,
                  sync_dist=True)
-        self.log('train_accuracy', acc_train, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('train_accuracy', acc_train, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
         return loss_train
 
@@ -158,9 +158,9 @@ class pretrainLlama(pl.LightningModule):
         acc_val = ((shift_logits == shift_labels) & non_padding_mask).sum().item() / non_padding_mask.sum().item()
 
         # Log
-        self.log('val_loss', loss_val, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('val_perplexity', perplexity.item(), on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('val_accuracy', acc_val, on_step=False, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_loss', loss_val, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_perplexity', perplexity.item(), on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('val_accuracy', acc_val, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
         return loss_val
 

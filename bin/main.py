@@ -80,10 +80,10 @@ elif hparam.target == 'ppi':
     )
 
 hparam.train_dataset_length = len(dm.dataset['train'])
-training_log_path = str('pretrain_protllama/pl_logs/')
+training_log_path = str(f'pretrain_protllama_{hparam.target}/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
-logger = WandbLogger(project="pretrain_protllama",
+logger = WandbLogger(project=f"pretrain_protllama_{hparam.target}",
                      name=f"{hparam.target}_{hparam.date}_{hparam.vocab_size}_pre-training_log", #display on the web
                      save_dir=f'pretrain_protllama_{hparam.target}/pl_logs/',
                      job_type='model-training',
@@ -105,11 +105,12 @@ if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(
     dirpath=training_model_path,
-    filename="{epoch}-{train_perplexity:.2f}-{val_perplexity:.2f}-%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
-    save_top_k=hparam.save_top_k,
+    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
+    save_top_k=-1,
     verbose=True,
     monitor="val_perplexity",
     mode="min",
+    every_n_epochs=1
 )
 lr_monitor = LearningRateMonitor(
     logging_interval='epoch'
@@ -125,6 +126,7 @@ trainer = Trainer(
     #limit_train_batches=3,
     max_epochs=hparam.epoch,
     logger=logger,
+    default_root_dir=f'pretrain_protllama_{hparam.target}/pl_model_training_cache/',
     # max_epochs=1,
     # min_epochs=1,
     callbacks=[TQDMProgressBar(refresh_rate=10), lr_monitor, checkpoint_callback],

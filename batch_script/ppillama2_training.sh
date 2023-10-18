@@ -12,12 +12,12 @@ mkdir $LOG_LOC
 image=$HOME_LOC/containers/pure_centos.sif
 DATE=$(date +%m_%d)
 
-singularity exec --nv  $image  scl enable rh-python38 bash << EOF > $LOG_LOC/$DATE.log >&1
+singularity exec --nv  $image  scl enable rh-python38 bash << EOF > $LOG_LOC/$DATE.log 2>&1
 
 python3.8 $SCRIPT_LOC/bin/main.py \
-  Oct17 \
+  $DATE \
   ppi \
-  3 \
+  4 \
   $DATA_LOC \
   $OUTPUT_LOC \
   $TOKENIZER_LOC \
@@ -27,7 +27,7 @@ python3.8 $SCRIPT_LOC/bin/main.py \
   --max_position_embeddings 4096 \
   --vocab_size 50k \
   --hidden_size 2048 \
-  --intermediate_size 6880 > Oct17_ppi_pretrain_set3_full_fsdp.log 2>&1
+  --intermediate_size 6880 > ${DATE}_ppi_pretrain_set4_full_fsdp.log 2>&1
 
 exit
 
