@@ -84,7 +84,7 @@ class BatchedPPIDataset(object):
     def tokenize_sequences_forward(self):
         prot_tuples = list(zip(self.sequence_str_1, self.sequence_str_2))
 
-        with Pool(processes=64, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+        with Pool(processes=8, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
             tokenized_pairs = list(
                 tqdm(pool.imap(partial(standalone_tokenize_function),
                                prot_tuples),
@@ -365,19 +365,23 @@ class PretrainPPIDataset(pl.LightningDataModule):
 
         # If you want to save the combined dataset:
         combined_datasets.save_to_disk(self.dataset_path)
-        del combined_datasets, train_dataset, validataion_dataset
+        del combined_datasets, train_dataset, validation_dataset
         gc.collect()
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)
 
-    def setup(self, stage=None):
-        assert self.dataset['train'] is not None, "Training dataset is None!"
-        assert self.dataset['valid'] is not None, "Validation dataset is None!"
-        # Assign train/val datasets for use in dataloaders
-        self.train_dataset = DynamicBatchingDataset(self.dataset['train'])
-        # Repeat similar steps for validation and test datasets if needed
-        self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
-        del self.dataset
+    def setup(self, stage: str):
+        #assert self.dataset['train'] is not None, "Training dataset is None!"
+        #assert self.dataset['valid'] is not None, "Validation dataset is None!"
+        if stage == 'fit':
+            # Assign train/val datasets for use in dataloaders
+            self.train_dataset = DynamicBatchingDataset(self.dataset['train'])
+            # Repeat similar steps for validation and test datasets if needed
+            self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
+            del self.dataset
+        elif stage == 'test':
+            pass
+            # TODO
         gc.collect()
         
     def train_dataloader(self):

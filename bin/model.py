@@ -9,6 +9,26 @@ from transformers import get_cosine_schedule_with_warmup
 import sentencepiece as spm
 from argparse import ArgumentParser
 import torch
+from torch.optim.lr_scheduler import _LRScheduler
+import numpy as np
+
+
+class CosineAnnealingWithWarmup(_LRScheduler):
+    def __init__(self, optimizer, warmup_steps, total_steps, eta_ratio=0.1, last_epoch=-1):
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+        self.eta_ratio = eta_ratio  # The ratio of minimum to maximum learning rate
+        super(CosineAnnealingWithWarmup, self).__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if self.last_epoch < self.warmup_steps:
+            return [base_lr * self.last_epoch / self.warmup_steps for base_lr in self.base_lrs]
+
+        progress = (self.last_epoch - self.warmup_steps) / (self.total_steps - self.warmup_steps)
+        cosine_decay = 0.5 * (1 + np.cos(np.pi * progress))
+        decayed_lr = (1 - self.eta_ratio) * cosine_decay + self.eta_ratio
+
+        return [decayed_lr * base_lr for base_lr in self.base_lrs]
 
 
 class pretrainLlama(pl.LightningModule):
@@ -43,9 +63,12 @@ class pretrainLlama(pl.LightningModule):
             config_dict = {
                 'protllama2': LlamaConfig(max_position_embeddings=self.hparam.max_position_embeddings,  # maximum length
                                           hidden_size=self.hparam.hidden_size,
+                                          num_attention_heads=self.hparam.num_attention_heads,
+                                          num_key_value_heads=self.hparam.num_key_value_heads,
                                           transformers_version=transformers.__version__,
                                           intermediate_size=self.hparam.intermediate_size,
                                           num_hidden_layers=self.hparam.num_hidden_layers,
+                                          _flash_attn_2_enabled=self.hparam.flash_attention,
                                           vocab_size=int(self.hparam.vocab_size.rstrip('k')) * 1000)}
             print(config_dict['protllama2'])
             return config_dict['protllama2']
@@ -77,15 +100,15 @@ class pretrainLlama(pl.LightningModule):
             """
             parameters = self.model.parameters()
             optimizer = AdamW(parameters, lr=self.hparam.learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
+            schedulers = CosineAnnealingWithWarmup(optimizer, warmup_steps=2000, eta_ratio=0.1, total_steps=self.hparam.epoch * self.hparam.train_dataset_length)
+
             lr_schedulers = {
-                "scheduler": get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=100,
-                                                            num_training_steps=self.hparam.epoch * self.hparam.train_dataset_length,
-                                                            num_cycles=0.39758361765,
-                                                            # number of waves in the cosine schedule - e.g. 0.5 for period 2 cos wave means take 0 to 1
-                                                            last_epoch=-1  # index of the last epoch when resuming training
-                                                            ),
-                "name": 'learning_rate_logs'
+                "scheduler": schedulers,
+                "name": 'learning_rate_logs',
+                "interval": 'step', # The scheduler updates the learning rate at every step (not epoch)
+                'frequency': 1 # The scheduler updates the learning rate after every batch
             }
+
             return [optimizer], [lr_schedulers]
         else:
             raise ValueError('You need to specify a scheduler first. Default is linear')
@@ -168,7 +191,7 @@ class pretrainLlama(pl.LightningModule):
     def add_model_specific_args(cls, parser: ArgumentParser):
         """parser for hyperparameters"""
         parser.add_argument('--learning_rate', type=float, default=3e-4, help='Learning rate for Adam optimizer')
-        parser.add_argument('--scheduler', type=str, default='linear', help='Learning rate scheduler, either linear '
+        parser.add_argument('--scheduler', type=str, default='cosine', help='Learning rate scheduler, either linear '
                                                                             'or cosine')
         parser.add_argument('--epoch', type=int, default=50, help='number of epochs for the training')
         return parser

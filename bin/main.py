@@ -8,12 +8,15 @@ import torch
 import torch.nn as nn
 from lightning.pytorch.strategies import FSDPStrategy
 from lightning import Trainer, seed_everything
-from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Timer, TQDMProgressBar, LearningRateMonitor
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, \
+    Timer, TQDMProgressBar, LearningRateMonitor, \
+    GradientAccumulationScheduler, StochasticWeightAveraging
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.profilers import PyTorchProfiler
 import time
 
 # set wandb offline on HPC
-#os.environ['WANDB_MODE'] = "offline"
+os.environ['WANDB_MODE'] = "offline"
 
 def parse_args():
     parser = argparse.ArgumentParser(description='pre-training protllama2')
@@ -33,6 +36,10 @@ def parse_args():
                         help='Number of workers for the DataLoader to load datasets')
     parser.add_argument('--num_hidden_layers', type=int, default=32,
                         help='Number of hidden layers')
+    parser.add_argument('--num_attention_heads', type=int, default=32,
+                        help='Number of attention heads, should be dividable by embedding dimension')
+    parser.add_argument('--num_key_value_heads', type=int, default=32,
+                        help='Number of attention heads, should be dividable by embedding dimension')
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch sizes, sequence number per batch, used for DDP parallelism, number=no of GPUs')
     parser.add_argument('--max_position_embeddings', type=int, default=512,
@@ -43,10 +50,17 @@ def parse_args():
                         help='Embedding dimension')
     parser.add_argument('--intermediate_size', type=int, default=2752,
                         help='MLP FFNN intermediate feature dimension')
-
+    parser.add_argument('--devices', type=int, default=1,
+                        help='Number of GPUs')
+    parser.add_argument('--accumulate_grad_batches', type=int, default=10,
+                        help='Number of batches accumulated before calculating loss. Per GPU accumulation.')
+    parser.add_argument('--strategy', type=str, default=None,
+                        help='Data parallelism strategies')
+    parser.add_argument('--flash_attention', type=bool, default=True,
+                        help='Using flash attention 2 or not')
     parser.add_argument(
         "--save_top_k",
-        default=3,
+        default=-1,
         type=int,
         help="The best k models according to the quantity monitored will be saved.",
     )
@@ -78,8 +92,12 @@ elif hparam.target == 'ppi':
         target=hparam.target,
         max_sequence_length=hparam.max_position_embeddings,
     )
+else:
+    raise ValueError('Target not prepared for the training.')
 
 hparam.train_dataset_length = len(dm.dataset['train'])
+if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
+    os.makedirs(f'pretrain_protllama_{hparam.target}')
 training_log_path = str(f'pretrain_protllama_{hparam.target}/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
@@ -115,22 +133,44 @@ checkpoint_callback = ModelCheckpoint(
 lr_monitor = LearningRateMonitor(
     logging_interval='epoch'
 )
-policy = {nn.TransformerEncoderLayer, nn.TransformerDecoderLayer}
-strategy = FSDPStrategy(auto_wrap_policy=policy)
+if hparam.strategy == 'fsdp':
+    policy = {nn.TransformerEncoderLayer, nn.TransformerDecoderLayer}
+    strategy = FSDPStrategy(auto_wrap_policy=policy)
+elif hparam.strategy == 'ddp':
+    strategy = 'ddp'
+elif hparam.strategy.contains('deepspeed'):
+    strategy = 'deepspeed_stage_2' #Shard optimizer states and gradients, remains at speed parity with DDP whilst providing even more memory improvement
+else:
+    strategy = None
+
+# accumulating grad batches
+# till 5th epoch, it will accumulate every 10 batches. From 5th epoch
+# till 9th epoch it will accumulate every 8 batches and after that no accumulation
+# will happen. Note that you need to use zero-indexed epoch keys here
+accumulator = GradientAccumulationScheduler(scheduling={0: 10, 4: 8, 9: 4, 15: 1})
+
+profiler = PyTorchProfiler(dirpath=training_log_path, filename="perf_logs")
+
 trainer = Trainer(
-    devices=8,
-    accelerator='cuda',
-    strategy=strategy,
-    #fast_dev_run=True,
+    devices=hparam.devices,
+    accelerator='gpu',
+    #strategy=strategy,
+    fast_dev_run=True,
     precision=16,
-    #limit_train_batches=3,
+    #limit_train_batches=0.01, # 1% of train, shorten epoch length
+    #limit_val_batches=0.01, # 1% of val
+    gradient_clip_val=1, # llama used gradient clipping=1, default is norm
+    #accumulate_grad_batches=hparam.accumulate_grad_batches, # already set callbacks
     max_epochs=hparam.epoch,
     logger=logger,
     default_root_dir=f'pretrain_protllama_{hparam.target}/pl_model_training_cache/',
     # max_epochs=1,
     # min_epochs=1,
-    callbacks=[TQDMProgressBar(refresh_rate=10), lr_monitor, checkpoint_callback],
+    callbacks=[TQDMProgressBar(refresh_rate=10), accumulator,
+               lr_monitor, checkpoint_callback,
+               StochasticWeightAveraging(swa_lrs=1e-2)], # make the model generalize better, harder to stuck at local minimum
     deterministic=True,
+    profiler=profiler, # profile execution time per function
     enable_model_summary=True
 )
 timer = Timer()
