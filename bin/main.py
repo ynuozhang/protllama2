@@ -4,9 +4,14 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:4096'
 from model import *
 from data import PretrainDataset
 from ppi_data import PretrainPPIDataset
+os.environ['MASTER_ADDR'] = 'localhost'
+os.environ['MASTER_PORT'] = '8888'  # choose an appropriate free port
+os.environ['RANK'] = '0'
+os.environ['WORLD_SIZE'] = '2'  # Assuming 2 GPUs
 import torch
+#torch.distributed.init_process_group(backend='nccl')
 import torch.nn as nn
-from lightning.pytorch.strategies import FSDPStrategy
+from lightning.pytorch.strategies import FSDPStrategy, DDPStrategy
 from lightning import Trainer, seed_everything
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, \
     Timer, TQDMProgressBar, LearningRateMonitor, \
@@ -14,6 +19,8 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, \
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.profilers import PyTorchProfiler
 import time
+from lightning.fabric.plugins.precision import transformer_engine
+
 
 # set wandb offline on HPC
 os.environ['WANDB_MODE'] = "offline"
@@ -137,7 +144,7 @@ if hparam.strategy == 'fsdp':
     policy = {nn.TransformerEncoderLayer, nn.TransformerDecoderLayer}
     strategy = FSDPStrategy(auto_wrap_policy=policy)
 elif hparam.strategy == 'ddp':
-    strategy = 'ddp'
+    strategy = DDPStrategy(process_group_backend="nccl")
 elif hparam.strategy.contains('deepspeed'):
     strategy = 'deepspeed_stage_2' #Shard optimizer states and gradients, remains at speed parity with DDP whilst providing even more memory improvement
 else:
@@ -149,16 +156,16 @@ else:
 # will happen. Note that you need to use zero-indexed epoch keys here
 accumulator = GradientAccumulationScheduler(scheduling={0: 10, 4: 8, 9: 4, 15: 1})
 
-profiler = PyTorchProfiler(dirpath=training_log_path, filename="perf_logs")
+profiler = PyTorchProfiler(dirpath=training_log_path, filename=f"perf_logs_{hparam.target}_{hparam.date}_{hparam.attempts}")
 
 trainer = Trainer(
     devices=hparam.devices,
     accelerator='gpu',
-    #strategy=strategy,
-    fast_dev_run=True,
-    precision=16,
-    #limit_train_batches=0.01, # 1% of train, shorten epoch length
-    #limit_val_batches=0.01, # 1% of val
+    strategy=strategy,
+    #fast_dev_run=True,
+    precision='bf16',
+    limit_train_batches=0.001, # 1% of train, shorten epoch length
+    limit_val_batches=0.001, # 1% of val
     gradient_clip_val=1, # llama used gradient clipping=1, default is norm
     #accumulate_grad_batches=hparam.accumulate_grad_batches, # already set callbacks
     max_epochs=hparam.epoch,

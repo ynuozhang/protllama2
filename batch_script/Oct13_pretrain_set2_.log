@@ -1,7 +1,0 @@
-Traceback (most recent call last):
-  File "/home/a03-yzhang/projects/protllama2/bin/main.py", line 3, in <module>
-    from model import *
-  File "/home/a03-yzhang/projects/protllama2/bin/model.py", line 100
-    print(batch['input_ids'].shape)
-                                  ^
-TabError: inconsistent use of tabs and spaces in indentation
