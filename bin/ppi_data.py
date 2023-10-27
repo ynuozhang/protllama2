@@ -6,7 +6,7 @@ import pickle
 from datasets import Dataset, DatasetDict, load_from_disk, concatenate_datasets
 from functools import partial
 from transformers.models.llama.tokenization_llama import LlamaTokenizer
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torch.nn.utils.rnn import pad_sequence
 import sentencepiece as spm
 import os
@@ -17,7 +17,7 @@ import random
 import gc
 import h5py
 import numpy as np
-
+from multiprocessing import Pool
 
 global_tokenizer = None
 
@@ -84,7 +84,7 @@ class BatchedPPIDataset(object):
     def tokenize_sequences_forward(self):
         prot_tuples = list(zip(self.sequence_str_1, self.sequence_str_2))
 
-        with Pool(processes=8, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+        with Pool(processes=16, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
             tokenized_pairs = list(
                 tqdm(pool.imap(partial(standalone_tokenize_function),
                                prot_tuples),
@@ -212,53 +212,71 @@ class DynamicBatchingDataset(Dataset):
 
     def __init__(self, dataset_dict):
         print('Initializing dataset...')
-        self.dataset_dict = dataset_dict
+        #self.dataset_dict = dataset_dict
+        self.dataset_dict = {
+            'attention_mask': [torch.tensor(item) for item in dataset_dict['attention_mask']],
+            'input_ids': [torch.tensor(item) for item in dataset_dict['input_ids']],
+            'labels': [torch.tensor(item) for item in dataset_dict['labels']]
+        }
 
     def __len__(self):
         return len(self.dataset_dict['attention_mask'])  # assuming each entry in dataset_dict represents a batch
 
     def __getitem__(self, idx):
-        # Directly retrieve the batch using the index
-        """returns [seq_number, token_length], return one batch at a time"""
+        # Check if idx is an integer or a list
         if isinstance(idx, int):
-            indices = [idx]
+            return {
+                'attention_mask': self.dataset_dict['attention_mask'][idx],
+                'input_ids': self.dataset_dict['input_ids'][idx],
+                'labels': self.dataset_dict['labels'][idx]
+            }
+        elif isinstance(idx, list):
+            return {
+                'attention_mask': [self.dataset_dict['attention_mask'][i] for i in idx],
+                'input_ids': [self.dataset_dict['input_ids'][i] for i in idx],
+                'labels': [self.dataset_dict['labels'][i] for i in idx]
+            }   
         else:
-            indices = idx
+            raise ValueError(f"Expected idx to be int or list, but got {type(idx)}")    
         
-        attention_masks = []
-        input_ids = []
-        labels = []
-        for index in indices:
-            attention_masks.append(torch.tensor(self.dataset_dict['attention_mask'][index]))
-            input_ids.append(torch.tensor(self.dataset_dict['input_ids'][index]))
-            labels.append(torch.tensor(self.dataset_dict['labels'][index]))
+    #if isinstance(idx, int):
+         #   indices = [idx]
+        #else:
+        #    indices = idx
+        
+        #attention_masks = []
+        #input_ids = []
+        #labels = []
+        #for index in indices:
+         #   attention_masks.append(torch.tensor(self.dataset_dict['attention_mask'][index]))
+         #   input_ids.append(torch.tensor(self.dataset_dict['input_ids'][index]))
+         #   labels.append(torch.tensor(self.dataset_dict['labels'][index]))
 
-        return {
-            'attention_mask': attention_masks,
-            'input_ids': input_ids,
-            'labels': labels
-        }
+        #return {
+         #   'attention_mask': attention_masks,
+          #  'input_ids': input_ids,
+          #  'labels': labels
+        #}
 
     @staticmethod
     def collate_fn(batch, verbose=False):
         # Since DataLoader's batch_size is 1, batch[0] contains your pre-batched data
         item = batch[0]
-        if verbose:
-            print(f"collate_fn batch shape: {item['input_ids'].shape}")
+        #if verbose:
+         #   print(f"collate_fn batch shape: {item['input_ids'].shape}")
 
-        attention_mask = item['attention_mask']
-        input_ids = item['input_ids']
-        if verbose:
-            print(f"collate_fn input_ids shape after indexing: {input_ids.shape}")
-        labels = item['labels']
+       # attention_mask = item['attention_mask']
+       # input_ids = item['input_ids']
+       # if verbose:
+        #    print(f"collate_fn input_ids shape after indexing: {input_ids.shape}")
+        #labels = item['labels']
 
         # These are already pre-padded, so you can directly return
         return {
-            'attention_mask': attention_mask,
-            'input_ids': input_ids,
-            'labels': labels
+            'attention_mask': item['attention_mask'],
+            'input_ids': item['input_ids'],
+            'labels': item['labels']
         }
-
 
 class PretrainPPIDataset(pl.LightningDataModule):
     def __init__(self,
@@ -284,23 +302,21 @@ class PretrainPPIDataset(pl.LightningDataModule):
         self.original_data = self.retrieve_data(input_dataset_path, self.target)
         self.tokenizer = self.tokenizer_generation(tokenizer_path, self.target, self.vocab_size)
         self.max_sequence_length = max_sequence_length
-        self.batch_size = 1  # used for DDP, determines how many batches load simultaneously \
+        self.batch_size = batch_size  # used for DDP, determines how many batches load simultaneously \
                                     # to multiple GPUs at a time. Not used for tokenization.
         self.dataset_path = f'{output_dataset_path}/ppi_8000_{self.vocab_size}_{self.max_sequence_length}_dataset.hf'
 
+    def prepare_data(self):
         if not os.path.exists(self.dataset_path):
             print('Start generating tokenized datasets')
             self.tokenized_data = {}
             self.save_tokenized_data()
-            self.dataset = load_from_disk(self.dataset_path, keep_in_memory=False)
-        else:
-            print('Load processed datasets')
-            self.dataset = load_from_disk(self.dataset_path, keep_in_memory=False)
-            # small test set if needed
+            self.dataset = load_from_disk(self.dataset_path)
+            #small test set if needed
             #self.dataset = DatasetDict({
                # 'train': dataset['train'].select(range(10)),
-               # 'valid': dataset['valid'].select(range(10))})
-
+              # 'valid': dataset['valid'].select(range(10))})
+    
     @staticmethod
     def retrieve_data(input_dataset_path, target):
         """
@@ -369,29 +385,50 @@ class PretrainPPIDataset(pl.LightningDataModule):
         gc.collect()
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)
+    
+    @staticmethod
+    def shard_dataset_for_gpu(args):
+        rank, num_gpus, dataset, dataset_length = args
+
+        shard_length = dataset_length // num_gpus
+        start_idx = shard_length * rank
+        end_idx = start_idx + shard_length if rank != num_gpus - 1 else dataset_length
+
+        subset_data = DictSubset(dataset['train'], list(range(start_idx, end_idx)))
+        processed_subset = {
+            'attention_mask': [subset_data[i]['attention_mask'] for i in range(len(subset_data))],
+            'input_ids': [subset_data[i]['input_ids'] for i in range(len(subset_data))],
+            'labels': [subset_data[i]['labels'] for i in range(len(subset_data))]
+        }
+        subset_dataset = DynamicBatchingDataset(processed_subset)
+        return rank, subset_dataset
+
 
     def setup(self, stage: str):
-        #assert self.dataset['train'] is not None, "Training dataset is None!"
-        #assert self.dataset['valid'] is not None, "Validation dataset is None!"
+        #global_rank = self.trainer.global_rank
         if stage == 'fit':
-            # Assign train/val datasets for use in dataloaders
+            #shard_path = f'/home/a03-yzhang/projects/protllama2_output/ppi_8000/ppi_8000_10k_2048_dataset.hf/train/data-0000{global_rank}-of-00009.arrow'
+            #self.shard = Dataset.from_file(shard_path)
+            #valid_path = self.dataset_path+'/valid'
+            self.dataset = load_from_disk(self.dataset_path)
+            #self.valid_dataset = load_from_disk(valid_path)
+            #self.train_dataset = DynamicBatchingDataset(self.shard)
             self.train_dataset = DynamicBatchingDataset(self.dataset['train'])
-            # Repeat similar steps for validation and test datasets if needed
             self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
-            del self.dataset
+            #self.val_dataset = DynamicBatchingDataset(self.valid_dataset)        
         elif stage == 'test':
-            pass
-            # TODO
+                pass
+
         gc.collect()
-        
+
     def train_dataloader(self):
         print('Building training dataloader')
-        return DataLoader(self.train_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
                           collate_fn=DynamicBatchingDataset.collate_fn, pin_memory=True)
 
     def val_dataloader(self):
         print('Building validation dataloader')
-        return DataLoader(self.val_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers,
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
                           collate_fn=DynamicBatchingDataset.collate_fn, pin_memory=True)
 
 if __name__=='__main__':

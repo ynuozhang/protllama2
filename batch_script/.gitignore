@@ -1,2 +1,4 @@
-*
-!.sh
+pretrain_protllama_ppi/
+.log
+.txt
+.model

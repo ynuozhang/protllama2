@@ -1,0 +1,497 @@
+Global seed set to 42
+Seed set to 42
+/home/a03-yzhang/.local/lib/python3.8/site-packages/lightning/fabric/connector.py:565: `precision=bf16` is supported for historical reasons but its usage is discouraged. Please set your precision to bf16-mixed instead!
+Using bfloat16 Automatic Mixed Precision (AMP)
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+[rank: 0] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/8
+[rank: 2] Global seed set to 42
+[rank: 2] Seed set to 42
+[rank: 1] Global seed set to 42
+[rank: 1] Seed set to 42
+[rank: 2] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 2, MEMBER: 3/8
+[rank: 1] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/8
+[rank: 5] Global seed set to 42
+[rank: 7] Global seed set to 42
+[rank: 5] Seed set to 42
+[rank: 7] Seed set to 42
+[rank: 4] Global seed set to 42
+[rank: 6] Global seed set to 42
+[rank: 4] Seed set to 42
+[rank: 6] Seed set to 42
+[rank: 3] Global seed set to 42
+[rank: 7] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 7, MEMBER: 8/8
+[rank: 5] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 5, MEMBER: 6/8
+[rank: 3] Seed set to 42
+[rank: 6] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 6, MEMBER: 7/8
+[rank: 4] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 4, MEMBER: 5/8
+[rank: 3] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 3, MEMBER: 4/8
+----------------------------------------------------------------------------------------------------
+distributed_backend=nccl
+All distributed processes registered. Starting with 8 processes
+----------------------------------------------------------------------------------------------------
+
+You are using a CUDA device ('NVIDIA A100-SXM4-80GB') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+wandb: Currently logged in as: ynuozhang (ynuoteam). Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.15.12
+wandb: Run data is saved locally in pretrain_protllama_ppi/pl_logs/wandb/run-20231025_102447-version_7
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Resuming run ppi_10_25_10k_pre-training_log
+wandb: ⭐️ View project at https://wandb.ai/ynuoteam/pretrain_protllama_ppi
+wandb: 🚀 View run at https://wandb.ai/ynuoteam/pretrain_protllama_ppi/runs/version_7
+LOCAL_RANK: 6 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 4 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 7 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 3 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+/home/a03-yzhang/.local/lib/python3.8/site-packages/lightning/pytorch/callbacks/model_checkpoint.py:630: Checkpoint directory /home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache exists and is not empty.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 2 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 5 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+
+  | Name  | Type             | Params
+-------------------------------------------
+0 | model | LlamaForCausalLM | 618 M 
+-------------------------------------------
+618 M     Trainable params
+0         Non-trainable params
+618 M     Total params
+2,474.296 Total estimated model params size (MB)
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Sanity Checking: |          | 0/? [00:00<?, ?it/s]LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Building validation dataloader
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 1280,
+  "initializer_range": 0.02,
+  "intermediate_size": 3440,
+  "max_position_embeddings": 2048,
+  "model_type": "llama",
+  "num_attention_heads": 20,
+  "num_hidden_layers": 30,
+  "num_key_value_heads": 20,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 10000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Sanity Checking:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([6, 317])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([2, 749])
+Sanity Checking DataLoader 0: 100%|██████████| 2/2 [00:02<00:00,  0.93it/s]                                                                           dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([1, 1708])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([9, 217])
+Building training dataloader
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([3, 519])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([4, 436])
+Building training dataloader
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([6, 330])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([6, 297])
+Building training dataloader
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([3, 582])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([1, 1455])
+Building training dataloader
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([2, 761])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([9, 206])
+Building training dataloader
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([5, 377])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([10, 195])
+Building training dataloader
+Building training dataloader
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([10, 202])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([11, 183])
+Building training dataloader
+/home/a03-yzhang/.local/lib/python3.8/site-packages/lightning/pytorch/loops/fit_loop.py:293: The number of training batches (2) is smaller than the logging interval Trainer(log_every_n_steps=10). Set a lower value for log_every_n_steps if you want to see logs for the training epoch.
+Training: |          | 0/? [00:00<?, ?it/s]Training:   0%|          | 0/2 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/2 [00:00<?, ?it/s] /home/a03-yzhang/.local/lib/python3.8/site-packages/lightning/pytorch/callbacks/stochastic_weight_avg.py:220: SWA is currently only supported every epoch. Found LRSchedulerConfig(scheduler=<model.CosineAnnealingWithWarmup object at 0x7ff0200fd520>, name='learning_rate_logs', interval='step', frequency=1, reduce_on_plateau=False, monitor=None, strict=True)
+Swapping scheduler `CosineAnnealingWithWarmup` for `SWALR`
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([6, 341])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([8, 248])
+0.0005060728744939271
+Epoch 0: 100%|██████████| 2/2 [00:01<00:00,  1.51it/s]dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([4, 440])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([4, 482])
+0.0
+Epoch 0: 100%|██████████| 2/2 [00:01<00:00,  1.50it/s, v_num=on_7, train_loss_step=9.470, train_perplexity_step=1.3e+4, train_accuracy_step=6.33e-5]dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([10, 188])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([3, 671])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([5, 406])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([2, 908])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([7, 290])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([4, 411])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([5, 395])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([6, 331])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([10, 193])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([4, 451])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([4, 471])
+0.0
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+training_step input_ids shape: torch.Size([3, 566])
+0.0
+
+Validation: |          | 0/? [00:00<?, ?it/s][A
+Validation:   0%|          | 0/2 [00:00<?, ?it/s][A
+Validation DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s][Adict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([6, 317])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([2, 749])
+
+Validation DataLoader 0: 100%|██████████| 2/2 [00:00<00:00,  4.97it/s][A
+                                                                      [AEpoch 0: 100%|██████████| 2/2 [00:02<00:00,  0.79it/s, v_num=on_7, train_loss_step=9.470, train_perplexity_step=1.3e+4, train_accuracy_step=6.33e-5, val_loss_step=9.470, val_perplexity_step=1.29e+4, val_accuracy_step=0.000227, val_loss_epoch=9.470, val_perplexity_epoch=1.3e+4, val_accuracy_epoch=9.79e-5]Epoch 0: 100%|██████████| 2/2 [00:02<00:00,  0.79it/s, v_num=on_7, train_loss_step=9.470, train_perplexity_step=1.3e+4, train_accuracy_step=6.33e-5, val_loss_step=9.470, val_perplexity_step=1.29e+4, val_accuracy_step=0.000227, val_loss_epoch=9.470, val_perplexity_epoch=1.3e+4, val_accuracy_epoch=9.79e-5, train_loss_epoch=10.10, train_perplexity_epoch=1.37e+4, train_accuracy_epoch=5.06e-5]Epoch 0, global step 1: 'val_perplexity' reached 12977.22266 (best 12977.22266), saving model to '/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt' as top 1
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0: 100%|██████████| 2/2 [00:36<00:00,  0.05it/s, v_num=on_7, train_loss_step=9.470, train_perplexity_step=1.3e+4, train_accuracy_step=6.33e-5, val_loss_step=9.470, val_perplexity_step=1.29e+4, val_accuracy_step=0.000227, val_loss_epoch=9.470, val_perplexity_epoch=1.3e+4, val_accuracy_epoch=9.79e-5, train_loss_epoch=10.10, train_perplexity_epoch=1.37e+4, train_accuracy_epoch=5.06e-5]dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([3, 582])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([1, 1455])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([3, 519])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([4, 436])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([1, 1708])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([9, 217])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([2, 761])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([9, 206])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([6, 330])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([6, 297])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([10, 202])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([11, 183])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([5, 377])
+dict_keys(['attention_mask', 'input_ids', 'labels'])
+validatation_step input_ids shape: torch.Size([10, 195])
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+
+|===========================================================================|
+|                  PyTorch CUDA memory summary, device ID 0                 |
+|---------------------------------------------------------------------------|
+|            CUDA OOMs: 0            |        cudaMalloc retries: 0         |
+|===========================================================================|
+|        Metric         | Cur Usage  | Peak Usage | Tot Alloc  | Tot Freed  |
+|---------------------------------------------------------------------------|
+| Allocated memory      |   1536 B   |  14268 MiB |  94691 MiB |  94691 MiB |
+|       from large pool |      0 B   |  14237 MiB |  94544 MiB |  94544 MiB |
+|       from small pool |   1536 B   |     38 MiB |    147 MiB |    147 MiB |
+|---------------------------------------------------------------------------|
+| Active memory         |   4608 B   |  14268 MiB |  94691 MiB |  94691 MiB |
+|       from large pool |      0 B   |  14237 MiB |  94544 MiB |  94544 MiB |
+|       from small pool |   4608 B   |     38 MiB |    147 MiB |    147 MiB |
+|---------------------------------------------------------------------------|
+| Requested memory      |     37 B   |  14252 MiB |  93240 MiB |  93240 MiB |
+|       from large pool |      0 B   |  14220 MiB |  93093 MiB |  93093 MiB |
+|       from small pool |     37 B   |     38 MiB |    146 MiB |    146 MiB |
+|---------------------------------------------------------------------------|
+| GPU reserved memory   |   8192 KiB |  16666 MiB |  18220 MiB |  18212 MiB |
+|       from large pool |      0 KiB |  16626 MiB |  18178 MiB |  18178 MiB |
+|       from small pool |   8192 KiB |     40 MiB |     42 MiB |     34 MiB |
+|---------------------------------------------------------------------------|
+| Non-releasable memory |   6139 KiB |   1561 MiB |  65704 MiB |  65698 MiB |
+|       from large pool |      0 KiB |   1554 MiB |  65523 MiB |  65523 MiB |
+|       from small pool |   6139 KiB |     11 MiB |    181 MiB |    175 MiB |
+|---------------------------------------------------------------------------|
+| Allocations           |       3    |    1652    |   16191    |   16188    |
+|       from large pool |       0    |    1216    |   12089    |   12089    |
+|       from small pool |       3    |     438    |    4102    |    4099    |
+|---------------------------------------------------------------------------|
+| Active allocs         |       9    |    1652    |   16191    |   16182    |
+|       from large pool |       0    |    1216    |   12089    |   12089    |
+|       from small pool |       9    |     438    |    4102    |    4093    |
+|---------------------------------------------------------------------------|
+| GPU reserved segments |       4    |     784    |     791    |     787    |
+|       from large pool |       0    |     764    |     770    |     770    |
+|       from small pool |       4    |      20    |      21    |      17    |
+|---------------------------------------------------------------------------|
+| Non-releasable allocs |      12    |     784    |   10749    |   10737    |
+|       from large pool |       0    |     727    |    9213    |    9213    |
+|       from small pool |      12    |      62    |    1536    |    1524    |
+|---------------------------------------------------------------------------|
+| Oversize allocations  |       0    |       0    |       0    |       0    |
+|---------------------------------------------------------------------------|
+| Oversize GPU segments |       0    |       0    |       0    |       0    |
+|===========================================================================|
+
+/home/a03-yzhang/projects/protllama2/batch_script/pretrain_protllama_ppi/pl_model_cache/epoch=0-train_perplexity=13740.341-val_perplexity=12977.223-ppi_10_25_10k_2048.ckpt
+wandb: Waiting for W&B process to finish... (success).
+wandb: 
+wandb: Run history:
+wandb:                  epoch ▁▁
+wandb:     learning_rate_logs ▁
+wandb:   train_accuracy_epoch ▁
+wandb:       train_loss_epoch ▁
+wandb: train_perplexity_epoch ▁
+wandb:    trainer/global_step ▁▁█▁▁
+wandb:     val_accuracy_epoch ▁
+wandb:      val_accuracy_step ▁█
+wandb:         val_loss_epoch ▁
+wandb:          val_loss_step █▁
+wandb:   val_perplexity_epoch ▁
+wandb:    val_perplexity_step █▁
+wandb: 
+wandb: Run summary:
+wandb:                  epoch 0
+wandb:     learning_rate_logs 0.0
+wandb:   train_accuracy_epoch 5e-05
+wandb:       train_loss_epoch 10.05904
+wandb: train_perplexity_epoch 13740.34082
+wandb:    trainer/global_step 0
+wandb:     val_accuracy_epoch 0.0001
+wandb:      val_accuracy_step 0.00023
+wandb:         val_loss_epoch 9.47077
+wandb:          val_loss_step 9.46816
+wandb:   val_perplexity_epoch 12977.22266
+wandb:    val_perplexity_step 12943.69727
+wandb: 
+wandb: 🚀 View run ppi_10_25_10k_pre-training_log at: https://wandb.ai/ynuoteam/pretrain_protllama_ppi/runs/version_7
+wandb: Synced 3 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: pretrain_protllama_ppi/pl_logs/wandb/run-20231025_102447-version_7/logs

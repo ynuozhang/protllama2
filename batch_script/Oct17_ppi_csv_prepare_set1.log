@@ -1,0 +1,12 @@
+DatasetDict({
+    train: Dataset({
+        features: ['sequence_1', 'sequence_2'],
+        num_rows: 431138
+    })
+    valid: Dataset({
+        features: ['sequence_1', 'sequence_2'],
+        num_rows: 49348
+    })
+})
+Saving the dataset (0/1 shards):   0%|          | 0/431138 [00:00<?, ? examples/s]Saving the dataset (0/1 shards):   9%|▉         | 40000/431138 [00:00<00:01, 347808.03 examples/s]Saving the dataset (0/1 shards):  27%|██▋       | 116000/431138 [00:00<00:00, 571282.14 examples/s]Saving the dataset (0/1 shards):  45%|████▍     | 194000/431138 [00:00<00:00, 658444.89 examples/s]Saving the dataset (0/1 shards):  61%|██████    | 261000/431138 [00:00<00:00, 656299.65 examples/s]Saving the dataset (0/1 shards):  77%|███████▋  | 332000/431138 [00:00<00:00, 670812.21 examples/s]Saving the dataset (0/1 shards):  94%|█████████▍| 407000/431138 [00:00<00:00, 690741.38 examples/s]Saving the dataset (1/1 shards): 100%|██████████| 431138/431138 [00:00<00:00, 690741.38 examples/s]Saving the dataset (1/1 shards): 100%|██████████| 431138/431138 [00:00<00:00, 599238.11 examples/s]
+Saving the dataset (0/1 shards):   0%|          | 0/49348 [00:00<?, ? examples/s]Saving the dataset (0/1 shards):  89%|████████▉ | 44000/49348 [00:00<00:00, 365529.00 examples/s]Saving the dataset (1/1 shards): 100%|██████████| 49348/49348 [00:00<00:00, 365529.00 examples/s]Saving the dataset (1/1 shards): 100%|██████████| 49348/49348 [00:00<00:00, 381145.19 examples/s]

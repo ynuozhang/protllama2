@@ -12,11 +12,11 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, \
     Timer, TQDMProgressBar, LearningRateMonitor, \
     GradientAccumulationScheduler, StochasticWeightAveraging
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.profilers import PyTorchProfiler
+from lightning.pytorch.profilers import PyTorchProfiler, AdvancedProfiler
 import time
 
 # set wandb offline on HPC
-os.environ['WANDB_MODE'] = "offline"
+#os.environ['WANDB_MODE'] = "offline"
 
 def parse_args():
     parser = argparse.ArgumentParser(description='pre-training protllama2')
@@ -56,11 +56,11 @@ def parse_args():
                         help='Number of batches accumulated before calculating loss. Per GPU accumulation.')
     parser.add_argument('--strategy', type=str, default=None,
                         help='Data parallelism strategies')
-    parser.add_argument('--flash_attention', type=bool, default=True,
+    parser.add_argument('--flash_attention', action='store_true',
                         help='Using flash attention 2 or not')
     parser.add_argument(
         "--save_top_k",
-        default=-1,
+        default=3,
         type=int,
         help="The best k models according to the quantity monitored will be saved.",
     )
@@ -95,7 +95,7 @@ elif hparam.target == 'ppi':
 else:
     raise ValueError('Target not prepared for the training.')
 
-hparam.train_dataset_length = len(dm.dataset['train'])
+hparam.train_dataloader_length = 22735
 if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
     os.makedirs(f'pretrain_protllama_{hparam.target}')
 training_log_path = str(f'pretrain_protllama_{hparam.target}/pl_logs/')
@@ -112,7 +112,7 @@ seed_everything(42)
 
 model = pretrainLlama(hparam)
 early_stop_callback = EarlyStopping(
-    monitor="val_perplexity",
+    monitor="val_loss",
     min_delta=0.0,
     patience=5,  # number of epoch with no improvement
     verbose=True,
@@ -124,11 +124,11 @@ if not os.path.exists(training_model_path):
 checkpoint_callback = ModelCheckpoint(
     dirpath=training_model_path,
     filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
-    save_top_k=-1,
+    save_top_k=hparam.save_top_k,
     verbose=True,
-    monitor="val_perplexity",
+    monitor="val_loss",
     mode="min",
-    every_n_epochs=1
+    #every_n_epochs=1
 )
 lr_monitor = LearningRateMonitor(
     logging_interval='epoch'
@@ -149,19 +149,22 @@ else:
 # will happen. Note that you need to use zero-indexed epoch keys here
 accumulator = GradientAccumulationScheduler(scheduling={0: 10, 4: 8, 9: 4, 15: 1})
 
-profiler = PyTorchProfiler(dirpath=training_log_path, filename="perf_logs")
+profiler = AdvancedProfiler(dirpath=training_log_path+f'{hparam.target}_{hparam.date}_{hparam.attempts}/', filename="perf_logs")
+
 
 trainer = Trainer(
     devices=hparam.devices,
     accelerator='gpu',
-    #strategy=strategy,
-    fast_dev_run=True,
-    precision=16,
-    #limit_train_batches=0.01, # 1% of train, shorten epoch length
-    #limit_val_batches=0.01, # 1% of val
+    strategy=strategy,
+    #fast_dev_run=True,
+    precision='bf16',
+    #limit_train_batches=0.001, # 1% of train, shorten epoch length
+    #limit_train_batches=0.001, # 1% of train, shorten epoch length
+    #limit_val_batches=0.001, # 1% of val
     gradient_clip_val=1, # llama used gradient clipping=1, default is norm
     #accumulate_grad_batches=hparam.accumulate_grad_batches, # already set callbacks
     max_epochs=hparam.epoch,
+    log_every_n_steps=1000,
     logger=logger,
     default_root_dir=f'pretrain_protllama_{hparam.target}/pl_model_training_cache/',
     # max_epochs=1,
@@ -177,6 +180,7 @@ timer = Timer()
 # automatic garbage collection
 import gc
 gc.collect()
+
 trainer.fit(model, datamodule=dm)
 trainer.print(torch.cuda.memory_summary())
 timer.time_elapsed('train')

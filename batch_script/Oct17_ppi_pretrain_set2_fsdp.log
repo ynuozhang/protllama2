@@ -1,0 +1,348 @@
+Global seed set to 42
+Seed set to 42
+/home/a03-yzhang/.local/lib/python3.8/site-packages/lightning/fabric/connector.py:565: `precision=16` is supported for historical reasons but its usage is discouraged. Please set your precision to 16-mixed instead!
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+Running in `fast_dev_run` mode: will run the requested loop using 1 batch(es). Logging and checkpointing is suppressed.
+[rank: 0] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/8
+[rank: 1] Global seed set to 42
+[rank: 6] Global seed set to 42
+[rank: 3] Global seed set to 42
+[rank: 2] Global seed set to 42
+[rank: 1] Seed set to 42
+[rank: 4] Global seed set to 42
+[rank: 5] Global seed set to 42
+[rank: 6] Seed set to 42
+[rank: 3] Seed set to 42
+[rank: 2] Seed set to 42
+[rank: 4] Seed set to 42
+[rank: 5] Seed set to 42
+[rank: 1] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/8
+[rank: 6] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 6, MEMBER: 7/8
+[rank: 7] Global seed set to 42
+[rank: 3] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 3, MEMBER: 4/8
+[rank: 2] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 2, MEMBER: 3/8
+[rank: 4] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 4, MEMBER: 5/8
+[rank: 5] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 5, MEMBER: 6/8
+[rank: 7] Seed set to 42
+[rank: 7] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 7, MEMBER: 8/8
+----------------------------------------------------------------------------------------------------
+distributed_backend=nccl
+All distributed processes registered. Starting with 8 processes
+----------------------------------------------------------------------------------------------------
+
+You are using a CUDA device ('NVIDIA A100-SXM4-80GB') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 7 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 4 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 3 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 6 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 5 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 2 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+
+  | Name  | Type             | Params
+-------------------------------------------
+0 | model | LlamaForCausalLM | 232 M 
+-------------------------------------------
+232 M     Trainable params
+0         Non-trainable params
+232 M     Total params
+929.129   Total estimated model params size (MB)
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building training dataloader
+Building validation dataloader
+Training: |          | 0/? [00:00<?, ?it/s]Training:   0%|          | 0/1 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/1 [00:00<?, ?it/s] Epoch 0: 100%|██████████| 1/1 [00:03<00:00,  0.30it/s]Epoch 0: 100%|██████████| 1/1 [00:03<00:00,  0.30it/s]Building validation dataloader
+Building validation dataloader
+Building validation dataloader
+Building validation dataloader
+Building validation dataloader
+Building validation dataloader
+Building validation dataloader
+
+Validation: |          | 0/? [00:00<?, ?it/s][A
+Validation:   0%|          | 0/1 [00:00<?, ?it/s][A
+Validation DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s][A
+Validation DataLoader 0: 100%|██████████| 1/1 [00:00<00:00,  2.92it/s][A
+                                                                      [AEpoch 0: 100%|██████████| 1/1 [00:04<00:00,  0.23it/s, val_loss=12.10, val_perplexity=8.06e+4, val_accuracy=0.000]Epoch 0: 100%|██████████| 1/1 [00:04<00:00,  0.23it/s, val_loss=12.10, val_perplexity=8.06e+4, val_accuracy=0.000, train_loss=11.70, train_perplexity=7.84e+4, train_accuracy=4.09e-5]`Trainer.fit` stopped: `max_steps=1` reached.
+Epoch 0: 100%|██████████| 1/1 [00:04<00:00,  0.23it/s, val_loss=12.10, val_perplexity=8.06e+4, val_accuracy=0.000, train_loss=11.70, train_perplexity=7.84e+4, train_accuracy=4.09e-5]
+
+
+
+
+
+
+
+|===========================================================================|
+|                  PyTorch CUDA memory summary, device ID 0                 |
+|---------------------------------------------------------------------------|
+|            CUDA OOMs: 0            |        cudaMalloc retries: 0         |
+|===========================================================================|
+|        Metric         | Cur Usage  | Peak Usage | Tot Alloc  | Tot Freed  |
+|---------------------------------------------------------------------------|
+| Allocated memory      |   9776 MiB |  39247 MiB | 239464 MiB | 229688 MiB |
+|       from large pool |   9748 MiB |  39215 MiB | 239361 MiB | 229613 MiB |
+|       from small pool |     28 MiB |     56 MiB |    103 MiB |     75 MiB |
+|---------------------------------------------------------------------------|
+| Active memory         |   9776 MiB |  39247 MiB | 239464 MiB | 229688 MiB |
+|       from large pool |   9748 MiB |  39215 MiB | 239361 MiB | 229613 MiB |
+|       from small pool |     28 MiB |     56 MiB |    103 MiB |     75 MiB |
+|---------------------------------------------------------------------------|
+| Requested memory      |   9774 MiB |  39005 MiB | 238164 MiB | 228389 MiB |
+|       from large pool |   9746 MiB |  38973 MiB | 238061 MiB | 228314 MiB |
+|       from small pool |     28 MiB |     56 MiB |    103 MiB |     75 MiB |
+|---------------------------------------------------------------------------|
+| GPU reserved memory   |  10542 MiB |  60498 MiB |  74700 MiB |  64158 MiB |
+|       from large pool |  10510 MiB |  60440 MiB |  74642 MiB |  64132 MiB |
+|       from small pool |     32 MiB |     58 MiB |     58 MiB |     26 MiB |
+|---------------------------------------------------------------------------|
+| Non-releasable memory | 784101 KiB |   1200 MiB |  67611 MiB |  66845 MiB |
+|       from large pool | 780085 KiB |   1196 MiB |  67510 MiB |  66748 MiB |
+|       from small pool |   4016 KiB |      3 MiB |    100 MiB |     96 MiB |
+|---------------------------------------------------------------------------|
+| Allocations           |     133    |    1074    |    6324    |    6191    |
+|       from large pool |      38    |     852    |    5076    |    5038    |
+|       from small pool |      95    |     225    |    1248    |    1153    |
+|---------------------------------------------------------------------------|
+| Active allocs         |     133    |    1074    |    6324    |    6191    |
+|       from large pool |      38    |     852    |    5076    |    5038    |
+|       from small pool |      95    |     225    |    1248    |    1153    |
+|---------------------------------------------------------------------------|
+| GPU reserved segments |      48    |     583    |     782    |     734    |
+|       from large pool |      32    |     554    |     753    |     721    |
+|       from small pool |      16    |      29    |      29    |      13    |
+|---------------------------------------------------------------------------|
+| Non-releasable allocs |      20    |     212    |    2974    |    2954    |
+|       from large pool |      11    |     204    |    2527    |    2516    |
+|       from small pool |       9    |      27    |     447    |     438    |
+|---------------------------------------------------------------------------|
+| Oversize allocations  |       1    |       2    |       5    |       4    |
+|---------------------------------------------------------------------------|
+| Oversize GPU segments |       1    |       3    |       4    |       3    |
+|===========================================================================|
+
+

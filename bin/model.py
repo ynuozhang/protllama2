@@ -100,8 +100,7 @@ class pretrainLlama(pl.LightningModule):
             """
             parameters = self.model.parameters()
             optimizer = AdamW(parameters, lr=self.hparam.learning_rate, betas=(0.9, 0.95), weight_decay=0.1)
-            schedulers = CosineAnnealingWithWarmup(optimizer, warmup_steps=2000, eta_ratio=0.1, total_steps=self.hparam.epoch * self.hparam.train_dataset_length)
-
+            schedulers = CosineAnnealingWithWarmup(optimizer, warmup_steps=2000, eta_ratio=0.1, total_steps=self.hparam.epoch * self.hparam.train_dataloader_length)
             lr_schedulers = {
                 "scheduler": schedulers,
                 "name": 'learning_rate_logs',
@@ -128,18 +127,14 @@ class pretrainLlama(pl.LightningModule):
         loss_train = outputs[0]
 
         # Compute the perplexity
-        perplexity = torch.exp(loss_train.detach())  # Ensure outputs are on CPU
+        perplexity = torch.exp(loss_train)  # Ensure outputs are on CPU
 
         # Accuracy computation
         # Shifting
-        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(dim=-1)  # Ensure outputs and argmax result are on CPU
-        if verbose:
-            print(shift_logits)
+        shift_logits = outputs[1][..., :-1, :].argmax(dim=-1)  # Ensure outputs and argmax result are on CPU
 
         # Assuming 'labels' is a key in batch containing true token IDs
-        shift_labels = batch['labels'][..., 1:].contiguous()  # Move labels to CPU
-        if verbose:
-            print(shift_logits)
+        shift_labels = batch['labels'][..., 1:]  # Move labels to CPU
 
         non_padding_mask = shift_labels != -100
 
@@ -156,24 +151,28 @@ class pretrainLlama(pl.LightningModule):
 
         return loss_train
 
-    def validation_step(self, batch, batch_nb: int):
+    def validation_step(self, batch, batch_nb: int, verbose=False):
         """ Similar to the training step but with the model in eval mode.
         Returns:
             - dictionary passed to the validation_end function.
         """
+        if verbose:
+            print(batch.keys())
+            print(f"validatation_step input_ids shape: {batch['input_ids'].shape}")
+
         outputs = self.forward(**batch)
         loss_val = outputs[0]
 
         # Compute the perplexity
-        perplexity = torch.exp(loss_val.detach())  # Ensure outputs are on CPU
+        perplexity = torch.exp(loss_val)  # Ensure outputs are on CPU
 
         # Accuracy computation
         # Shifting
-        shift_logits = outputs[1][..., :-1, :].contiguous().argmax(
+        shift_logits = outputs[1][..., :-1, :].argmax(
             dim=-1)  # Ensure outputs and argmax result are on CPU
 
         # Assuming 'labels' is a key in batch containing true token IDs
-        shift_labels = batch['labels'][..., 1:].contiguous()  # Move labels to CPU
+        shift_labels = batch['labels'][..., 1:]  # Move labels to CPU
 
         non_padding_mask = shift_labels != -100
 
@@ -190,10 +189,10 @@ class pretrainLlama(pl.LightningModule):
     @classmethod
     def add_model_specific_args(cls, parser: ArgumentParser):
         """parser for hyperparameters"""
-        parser.add_argument('--learning_rate', type=float, default=3e-4, help='Learning rate for Adam optimizer')
+        parser.add_argument('--learning_rate', type=float, default=1e-4, help='Learning rate for Adam optimizer')
         parser.add_argument('--scheduler', type=str, default='cosine', help='Learning rate scheduler, either linear '
                                                                             'or cosine')
-        parser.add_argument('--epoch', type=int, default=50, help='number of epochs for the training')
+        parser.add_argument('--epoch', type=int, default=30, help='number of epochs for the training')
         return parser
 
 

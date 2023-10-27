@@ -1,0 +1,294 @@
+Global seed set to 42
+Seed set to 42
+/home/a03-yzhang/.local/lib/python3.8/site-packages/lightning/fabric/connector.py:565: `precision=16` is supported for historical reasons but its usage is discouraged. Please set your precision to 16-mixed instead!
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+[rank: 0] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/8
+[rank: 2] Global seed set to 42
+[rank: 2] Seed set to 42
+[rank: 2] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 2, MEMBER: 3/8
+[rank: 1] Global seed set to 42
+[rank: 3] Global seed set to 42
+[rank: 7] Global seed set to 42
+[rank: 5] Global seed set to 42
+[rank: 4] Global seed set to 42
+[rank: 1] Seed set to 42
+[rank: 6] Global seed set to 42
+[rank: 3] Seed set to 42
+[rank: 7] Seed set to 42
+[rank: 5] Seed set to 42
+[rank: 4] Seed set to 42
+[rank: 6] Seed set to 42
+[rank: 1] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/8
+[rank: 3] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 3, MEMBER: 4/8
+[rank: 7] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 7, MEMBER: 8/8
+[rank: 5] Seed set to 42
+[rank: 4] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 5, MEMBER: 6/8
+Initializing distributed: GLOBAL_RANK: 4, MEMBER: 5/8
+[rank: 6] Seed set to 42
+Initializing distributed: GLOBAL_RANK: 6, MEMBER: 7/8
+----------------------------------------------------------------------------------------------------
+distributed_backend=nccl
+All distributed processes registered. Starting with 8 processes
+----------------------------------------------------------------------------------------------------
+
+You are using a CUDA device ('NVIDIA A100-SXM4-80GB') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+wandb: Currently logged in as: ynuozhang (ynuoteam). Use `wandb login --relogin` to force relogin
+wandb: WARNING Path pretrain_protllama_ppi/pl_logs/wandb/ wasn't writable, using system temp directory.
+wandb: WARNING Path pretrain_protllama_ppi/pl_logs/wandb/ wasn't writable, using system temp directory
+wandb: Tracking run with wandb version 0.15.12
+wandb: Run data is saved locally in /tmp/wandb/run-20231017_214013-version_3
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Resuming run ppi_Oct17_50k_pre-training_log
+wandb: ⭐️ View project at https://wandb.ai/ynuoteam/pretrain_protllama
+wandb: 🚀 View run at https://wandb.ai/ynuoteam/pretrain_protllama/runs/version_3
+LOCAL_RANK: 6 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 7 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 5 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 2 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 4 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+LOCAL_RANK: 3 - CUDA_VISIBLE_DEVICES: [0,1,2,3,4,5,6,7]
+
+  | Name  | Type             | Params
+-------------------------------------------
+0 | model | LlamaForCausalLM | 232 M 
+-------------------------------------------
+232 M     Trainable params
+0         Non-trainable params
+232 M     Total params
+929.129   Total estimated model params size (MB)
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Sanity Checking: |          | 0/? [00:00<?, ?it/s]Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Load processed datasets
+LlamaConfig {
+  "attention_bias": false,
+  "bos_token_id": 1,
+  "eos_token_id": 2,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6880,
+  "max_position_embeddings": 4096,
+  "model_type": "llama",
+  "num_attention_heads": 32,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 32,
+  "pretraining_tp": 1,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 10000.0,
+  "tie_word_embeddings": false,
+  "transformers_version": "4.34.0",
+  "use_cache": true,
+  "vocab_size": 50000
+}
+
+Initializing dataset...
+Initializing dataset...
+Building validation dataloader
+Building validation dataloader
+Sanity Checking:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0: 100%|██████████| 2/2 [00:48<00:00,  0.04it/s]                                                                           Building training dataloader
+Building training dataloader
+Building training dataloader
+Building training dataloader
+Building training dataloader
+Building training dataloader
+Building training dataloader
+Building training dataloader
+Training: |          | 0/? [00:00<?, ?it/s]Training:   0%|          | 0/9223 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/9223 [00:00<?, ?it/s] Epoch 0:   0%|          | 10/9223 [33:27<513:50:53,  0.00it/s]Epoch 0:   0%|          | 10/9223 [33:27<513:51:02,  0.00it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.54e+4, train_accuracy_step=3.27e-5]Epoch 0:   0%|          | 20/9223 [40:32<310:53:06,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.54e+4, train_accuracy_step=3.27e-5]Epoch 0:   0%|          | 20/9223 [40:32<310:53:10,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.49e+4, train_accuracy_step=0.000]  Epoch 0:   0%|          | 30/9223 [1:00:44<310:11:32,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.49e+4, train_accuracy_step=0.000]Epoch 0:   0%|          | 30/9223 [1:00:44<310:11:35,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.49e+4, train_accuracy_step=3.15e-5]Epoch 0:   0%|          | 40/9223 [1:07:49<259:30:41,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.49e+4, train_accuracy_step=3.15e-5]Epoch 0:   0%|          | 40/9223 [1:07:49<259:30:43,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.55e+4, train_accuracy_step=3.13e-5]Epoch 0:   1%|          | 50/9223 [1:15:13<230:00:24,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.55e+4, train_accuracy_step=3.13e-5]Epoch 0:   1%|          | 50/9223 [1:15:13<230:00:25,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.55e+4, train_accuracy_step=0.000]  Epoch 0:   1%|          | 60/9223 [1:29:24<227:34:55,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.55e+4, train_accuracy_step=0.000]Epoch 0:   1%|          | 60/9223 [1:29:24<227:34:57,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.47e+4, train_accuracy_step=0.000]Epoch 0:   1%|          | 70/9223 [1:36:26<210:10:38,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.47e+4, train_accuracy_step=0.000]Epoch 0:   1%|          | 70/9223 [1:36:26<210:10:39,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=3.22e-5]Epoch 0:   1%|          | 80/9223 [1:50:14<209:59:34,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=3.22e-5]Epoch 0:   1%|          | 80/9223 [1:50:14<209:59:36,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.6e+4, train_accuracy_step=0.000]   Epoch 0:   1%|          | 90/9223 [1:57:26<198:38:02,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.6e+4, train_accuracy_step=0.000]Epoch 0:   1%|          | 90/9223 [1:57:26<198:38:03,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.53e+4, train_accuracy_step=6.35e-5]Epoch 0:   1%|          | 100/9223 [2:11:13<199:30:54,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.53e+4, train_accuracy_step=6.35e-5]Epoch 0:   1%|          | 100/9223 [2:11:13<199:30:54,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.51e+4, train_accuracy_step=0.000]  Epoch 0:   1%|          | 110/9223 [2:18:43<191:33:02,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.51e+4, train_accuracy_step=0.000]Epoch 0:   1%|          | 110/9223 [2:18:43<191:33:03,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.47e+4, train_accuracy_step=6.27e-5]Epoch 0:   1%|▏         | 120/9223 [2:25:57<184:31:50,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.47e+4, train_accuracy_step=6.27e-5]Epoch 0:   1%|▏         | 120/9223 [2:25:57<184:31:51,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=75087.0, train_accuracy_step=6.48e-5]Epoch 0:   1%|▏         | 130/9223 [2:33:06<178:28:51,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=75087.0, train_accuracy_step=6.48e-5]Epoch 0:   1%|▏         | 130/9223 [2:33:06<178:28:52,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.54e+4, train_accuracy_step=3.09e-5]Epoch 0:   2%|▏         | 140/9223 [2:46:25<179:57:35,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.54e+4, train_accuracy_step=3.09e-5]Epoch 0:   2%|▏         | 140/9223 [2:46:25<179:57:36,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=0.000]  Epoch 0:   2%|▏         | 150/9223 [2:53:58<175:22:59,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 150/9223 [2:53:58<175:23:00,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.45e+4, train_accuracy_step=3.39e-5]Epoch 0:   2%|▏         | 160/9223 [3:01:26<171:17:21,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.45e+4, train_accuracy_step=3.39e-5]Epoch 0:   2%|▏         | 160/9223 [3:01:26<171:17:22,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=0.000]  Epoch 0:   2%|▏         | 170/9223 [3:08:39<167:26:46,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 170/9223 [3:08:39<167:26:47,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.55e+4, train_accuracy_step=3.34e-5]Epoch 0:   2%|▏         | 180/9223 [3:21:41<168:52:45,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.55e+4, train_accuracy_step=3.34e-5]Epoch 0:   2%|▏         | 180/9223 [3:21:41<168:52:45,  0.01it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.4e+4, train_accuracy_step=0.000]   Epoch 0:   2%|▏         | 190/9223 [3:29:09<165:44:01,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.4e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 190/9223 [3:29:09<165:44:02,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.54e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 200/9223 [3:37:01<163:10:44,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.54e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 200/9223 [3:37:01<163:10:45,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.53e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 210/9223 [3:44:14<160:24:02,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.53e+4, train_accuracy_step=0.000]Epoch 0:   2%|▏         | 210/9223 [3:44:14<160:24:02,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=3.36e-5]Epoch 0:   2%|▏         | 220/9223 [3:57:17<161:50:49,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.56e+4, train_accuracy_step=3.36e-5]Epoch 0:   2%|▏         | 220/9223 [3:57:17<161:50:50,  0.02it/s, v_num=on_3, train_loss_step=11.20, train_perplexity_step=7.5e+4, train_accuracy_step=0.000]   

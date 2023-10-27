@@ -1,0 +1,2 @@
+mkdir: cannot create directory ‘/home/a03-yzhang/projects/protllama2_data/data/1million_example’: File exists
+mkdir: cannot create directory ‘/home/a03-yzhang/projects/protllama2_data/logs’: File exists
