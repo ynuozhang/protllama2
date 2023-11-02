@@ -47,7 +47,7 @@ class pretrainLlama(pl.LightningModule):
             tokenizer.pad_token = tokenizer.unk_token
             return tokenizer
         elif target == 'protein' or target == 'ppi':
-            tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
+            tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s_special.model" % (vocab_size))
             return tokenizer
         else:
             raise ValueError('Have not prepared tokenizer for this target')

@@ -91,9 +91,9 @@ class BatchedPPIDataset(object):
                      total=len(prot_tuples)))
 
         for tokens_1, tokens_2 in tokenized_pairs:
-            seq_length = len(tokens_1) + len(tokens_2) + 2  # for both bos, eos tokens
+            seq_length = len(tokens_1) + len(tokens_2) + 3  # for both bos, eos, sep tokens
             if seq_length <= self.max_sequence_length:
-                forward_sequence = [self.tokenizer.bos_id()] + tokens_1 + [self.tokenizer.eos_id()] + tokens_2
+                forward_sequence = [self.tokenizer.bos_id()] + tokens_1 + [self.tokenizer.eos_id()] + tokens_2 + [self.tokenizer.eos_id()]
                 self.tokenized_sequences.append(forward_sequence)
 
     def tokenize_sequences_backward(self):
@@ -103,7 +103,7 @@ class BatchedPPIDataset(object):
             eos_position = sequence.index(self.tokenizer.eos_id())
             tokens_1 = sequence[1:eos_position]  # Extract tokens1 without bos and eos
             tokens_2 = sequence[eos_position + 1:]  # Extract tokens2 after eos
-            reversed_sequence = [self.tokenizer.bos_id()] + tokens_2 + [self.tokenizer.eos_id()] + tokens_1
+            reversed_sequence = [self.tokenizer.bos_id()] + tokens_2 + [self.tokenizer.eos_id()] + tokens_1 + [self.tokenizer.eos_id()]
             self.reversed_tokenized_sequences.append(reversed_sequence)
         self.tokenized_sequences.extend(self.reversed_tokenized_sequences)
 
@@ -304,14 +304,14 @@ class PretrainPPIDataset(pl.LightningDataModule):
         self.max_sequence_length = max_sequence_length
         self.batch_size = batch_size  # used for DDP, determines how many batches load simultaneously \
                                     # to multiple GPUs at a time. Not used for tokenization.
-        self.dataset_path = f'{output_dataset_path}/ppi_8000_{self.vocab_size}_{self.max_sequence_length}_dataset.hf'
+        self.dataset_path = f'{output_dataset_path}/ppi_8000_{self.vocab_size}_{self.max_sequence_length}_dataset_special.hf'
 
     def prepare_data(self):
         if not os.path.exists(self.dataset_path):
             print('Start generating tokenized datasets')
             self.tokenized_data = {}
             self.save_tokenized_data()
-            self.dataset = load_from_disk(self.dataset_path)
+            #self.dataset = load_from_disk(self.dataset_path)
             #small test set if needed
             #self.dataset = DatasetDict({
                # 'train': dataset['train'].select(range(10)),
@@ -343,7 +343,7 @@ class PretrainPPIDataset(pl.LightningDataModule):
             tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
             return tokenizer
         elif target == 'ppi':
-            tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s.model" % (vocab_size))
+            tokenizer = spm.SentencePieceProcessor(model_file=tokenizer_path + "protein_%s_special.model" % (vocab_size))
             return tokenizer
         else:
             raise ValueError('Have not prepared tokenizer for this target')
@@ -417,7 +417,7 @@ class PretrainPPIDataset(pl.LightningDataModule):
             self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
             #self.val_dataset = DynamicBatchingDataset(self.valid_dataset)        
         elif stage == 'test':
-                pass
+            pass
 
         gc.collect()
 
