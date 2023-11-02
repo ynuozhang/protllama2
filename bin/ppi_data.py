@@ -44,7 +44,7 @@ class TokenizeBatch(object):
     """
 
     def __init__(self, tokenizer):
-        self.pad_token_id = tokenizer.unk_id()
+        self.pad_token_id = tokenizer.pad_id()
 
     def __call__(self, batches):
         data_tokens = [torch.tensor(token_list) for token_list in batches]
@@ -93,17 +93,17 @@ class BatchedPPIDataset(object):
         for tokens_1, tokens_2 in tokenized_pairs:
             seq_length = len(tokens_1) + len(tokens_2) + 3  # for both bos, eos, sep tokens
             if seq_length <= self.max_sequence_length:
-                forward_sequence = [self.tokenizer.bos_id()] + tokens_1 + [self.tokenizer.eos_id()] + tokens_2 + [self.tokenizer.eos_id()]
+                forward_sequence = [self.tokenizer.bos_id()] + tokens_1 + [self.tokenizer.piece_to_id('<sep>')] + tokens_2 + [self.tokenizer.eos_id()]
                 self.tokenized_sequences.append(forward_sequence)
 
     def tokenize_sequences_backward(self):
         """avoid re-tokenization of the same sequences"""
         self.reversed_tokenized_sequences = []
         for sequence in self.tokenized_sequences:
-            eos_position = sequence.index(self.tokenizer.eos_id())
-            tokens_1 = sequence[1:eos_position]  # Extract tokens1 without bos and eos
-            tokens_2 = sequence[eos_position + 1:]  # Extract tokens2 after eos
-            reversed_sequence = [self.tokenizer.bos_id()] + tokens_2 + [self.tokenizer.eos_id()] + tokens_1 + [self.tokenizer.eos_id()]
+            sep_position = sequence.index(self.tokenizer.piece_to_id('<sep>'))
+            tokens_1 = sequence[1:sep_position]  # Extract tokens1 without bos and sep
+            tokens_2 = sequence[sep_position + 1:-1]  # Extract tokens2 after sep before eos
+            reversed_sequence = [self.tokenizer.bos_id()] + tokens_2 + [self.tokenizer.piece_to_id('<sep>')] + tokens_1 + [self.tokenizer.eos_id()]
             self.reversed_tokenized_sequences.append(reversed_sequence)
         self.tokenized_sequences.extend(self.reversed_tokenized_sequences)
 

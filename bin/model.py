@@ -192,7 +192,7 @@ class pretrainLlama(pl.LightningModule):
         parser.add_argument('--learning_rate', type=float, default=1e-4, help='Learning rate for Adam optimizer')
         parser.add_argument('--scheduler', type=str, default='cosine', help='Learning rate scheduler, either linear '
                                                                             'or cosine')
-        parser.add_argument('--epoch', type=int, default=30, help='number of epochs for the training')
+        parser.add_argument('--epoch', type=int, default=15, help='number of epochs for the training')
         return parser
 
 
