@@ -186,6 +186,44 @@ class pretrainLlama(pl.LightningModule):
 
         return loss_val
 
+    def test_step(self, batch, batch_nb: int, verbose=False):
+        """ Similar to the training step but with the model in eval mode.
+        Returns:
+            - dictionary passed to the validation_end function.
+        """
+        if verbose:
+            print(batch.keys())
+            print(f"test_step input_ids shape: {batch['input_ids'].shape}")
+
+        outputs = self.forward(**batch)
+        loss_test = outputs[0]
+
+        # Compute the perplexity
+        perplexity = torch.exp(loss_test)  # Ensure outputs are on CPU
+
+        # Accuracy computation
+        # Shifting
+        shift_logits = outputs[1][..., :-1, :].argmax(
+            dim=-1)  # Ensure outputs and argmax result are on CPU
+
+        # Assuming 'labels' is a key in batch containing true token IDs
+        shift_labels = batch['labels'][..., 1:]  # Move labels to CPU
+
+        non_padding_mask = shift_labels != -100
+
+        # Compare predictions to true labels, but only for non-padding tokens
+        acc_test = ((shift_logits == shift_labels) & non_padding_mask).sum().item() / non_padding_mask.sum().item()
+
+        # Log
+        self.log('test_loss', loss_test, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('test_perplexity', perplexity.item(), on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        self.log('test_accuracy', acc_test, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+
+        return loss_test
+
+    #def generation(self, batch):
+        #return self.model.generate(**batch)
+
     @classmethod
     def add_model_specific_args(cls, parser: ArgumentParser):
         """parser for hyperparameters"""

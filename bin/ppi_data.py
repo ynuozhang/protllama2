@@ -84,7 +84,7 @@ class BatchedPPIDataset(object):
     def tokenize_sequences_forward(self):
         prot_tuples = list(zip(self.sequence_str_1, self.sequence_str_2))
 
-        with Pool(processes=16, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+        with Pool(processes=8, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
             tokenized_pairs = list(
                 tqdm(pool.imap(partial(standalone_tokenize_function),
                                prot_tuples),
@@ -293,6 +293,7 @@ class PretrainPPIDataset(pl.LightningDataModule):
 
         self.val_dataset = None
         self.train_dataset = None
+        self.test_dataset = None
         self.intermediate_data_path = str(f'{output_dataset_path}/intermediate')
         if not os.path.exists(self.intermediate_data_path):
             os.makedirs(self.intermediate_data_path)
@@ -304,7 +305,7 @@ class PretrainPPIDataset(pl.LightningDataModule):
         self.max_sequence_length = max_sequence_length
         self.batch_size = batch_size  # used for DDP, determines how many batches load simultaneously \
                                     # to multiple GPUs at a time. Not used for tokenization.
-        self.dataset_path = f'{output_dataset_path}/ppi_8000_{self.vocab_size}_{self.max_sequence_length}_dataset_special.hf'
+        self.dataset_path = f'{output_dataset_path}/ppi_golden_{self.vocab_size}_{self.max_sequence_length}_dataset_special.hf'
 
     def prepare_data(self):
         if not os.path.exists(self.dataset_path):
@@ -329,7 +330,8 @@ class PretrainPPIDataset(pl.LightningDataModule):
         elif target == 'protein':
             return load_from_disk(f'{input_dataset_path}/uniref50_random90split.hf')
         elif target == 'ppi':
-            return load_from_disk(f'{input_dataset_path}/ppi_8000_raw.hf')
+            #return load_from_disk(f'{input_dataset_path}/ppi_8000_raw.hf')
+            return load_from_disk(f'{input_dataset_path}/ppi_golden_raw.hf')
         else:
             raise ValueError('Have not prepared dataset for this target')
 
@@ -349,7 +351,7 @@ class PretrainPPIDataset(pl.LightningDataModule):
             raise ValueError('Have not prepared tokenizer for this target')
 
     def process_and_store_data(self, split_name):
-        assert split_name in ["train", "valid"], "Invalid split_name. It should be either 'train' or 'valid'."
+        assert split_name in ["train", "valid", "test"], "Invalid split_name. It should be either 'train' or 'valid' or 'test'."
 
         print("Tokenizing sequences...")
         batched_dataset = BatchedPPIDataset(self.original_data[split_name], self.tokenizer, self.max_sequence_length)
@@ -361,27 +363,30 @@ class PretrainPPIDataset(pl.LightningDataModule):
         print('Finish generating dataloader for ', split_name)
 
     def save_tokenized_data(self):
-        for split_name in ['train', 'valid']:
+        for split_name in ['train', 'valid', 'test']:
             self.process_and_store_data(split_name)
         del self.original_data
 
         train_combined_path = f'{self.intermediate_data_path}/train_combined_reversed_ppi_tokenized_sequences.hf'
         validation_combined_path = f'{self.intermediate_data_path}/valid_combined_reversed_ppi_tokenized_sequences.hf'
+        test_combined_path = f'{self.intermediate_data_path}/test_combined_reversed_ppi_tokenized_sequences.hf'
 
         # Load them
         train_dataset = load_from_disk(train_combined_path)
         validation_dataset = load_from_disk(validation_combined_path)
+        test_dataset = load_from_disk(test_combined_path)
 
         print('Start combining datasets')
 
         combined_datasets = DatasetDict({
             'train': train_dataset,
-            'valid': validation_dataset
+            'valid': validation_dataset,
+            'test': test_dataset
         })
 
         # If you want to save the combined dataset:
         combined_datasets.save_to_disk(self.dataset_path)
-        del combined_datasets, train_dataset, validation_dataset
+        del combined_datasets, train_dataset, validation_dataset, test_dataset
         gc.collect()
         # with open(self.dataset_path, "wb") as file:
         # pickle.dump(self.dataset, file)
@@ -406,18 +411,16 @@ class PretrainPPIDataset(pl.LightningDataModule):
 
     def setup(self, stage: str):
         #global_rank = self.trainer.global_rank
-        if stage == 'fit':
-            #shard_path = f'/home/a03-yzhang/projects/protllama2_output/ppi_8000/ppi_8000_10k_2048_dataset.hf/train/data-0000{global_rank}-of-00009.arrow'
-            #self.shard = Dataset.from_file(shard_path)
-            #valid_path = self.dataset_path+'/valid'
-            self.dataset = load_from_disk(self.dataset_path)
-            #self.valid_dataset = load_from_disk(valid_path)
-            #self.train_dataset = DynamicBatchingDataset(self.shard)
-            self.train_dataset = DynamicBatchingDataset(self.dataset['train'])
-            self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
-            #self.val_dataset = DynamicBatchingDataset(self.valid_dataset)        
-        elif stage == 'test':
-            pass
+        #shard_path = f'/home/a03-yzhang/projects/protllama2_output/ppi_8000/ppi_8000_10k_2048_dataset.hf/train/data-0000{global_rank}-of-00009.arrow'
+        #self.shard = Dataset.from_file(shard_path)
+        #valid_path = self.dataset_path+'/valid'
+        self.dataset = load_from_disk(self.dataset_path)
+        #self.valid_dataset = load_from_disk(valid_path)
+        #self.train_dataset = DynamicBatchingDataset(self.shard)
+        self.train_dataset = DynamicBatchingDataset(self.dataset['train'])
+        self.val_dataset = DynamicBatchingDataset(self.dataset['valid'])
+        self.test_dataset = DynamicBatchingDataset(self.dataset['test'])
+        #self.val_dataset = DynamicBatchingDataset(self.valid_dataset)
 
         gc.collect()
 
@@ -431,17 +434,23 @@ class PretrainPPIDataset(pl.LightningDataModule):
         return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
                           collate_fn=DynamicBatchingDataset.collate_fn, pin_memory=True)
 
+    def test_dataloader(self):
+        print('Building test dataloader')
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          collate_fn=DynamicBatchingDataset.collate_fn, pin_memory=True)
+
 if __name__=='__main__':
     dm = PretrainPPIDataset(
-        input_dataset_path='/data/rozen/home/e0833634/lama/data/ppi_8000/',
-        output_dataset_path='/data/rozen/home/e0833634/lama/data/ppi_8000/',
+        input_dataset_path='/data/rozen/home/e0833634/lama/data/ppi_golden',
+        output_dataset_path='/data/rozen/home/e0833634/lama/data/ppi_golden',
         tokenizer_path='/data/rozen/home/e0833634/lama/protllama/batch_script/',
         num_workers=2,
         batch_size=1,
-        vocab_size='8k',
+        vocab_size='32k',
         target='ppi',
-        max_sequence_length=512,
+        max_sequence_length=2048,
     )
-    dm.setup()
+    dm.prepare_data()
+    dm.setup('fit')
     dm.train_dataloader()
     dm.val_dataloader()

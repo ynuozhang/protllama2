@@ -16,22 +16,29 @@ def parse_args():
 
 
 params = parse_args()
-df = pd.read_csv(f'{params.input_csv_path}/ppigpt_test_merged_MI0915_LTPHTP_8000AA_oct10_2023.csv')
-df2 = pd.read_csv(f'{params.input_csv_path}/ppigpt_train_merged_MI0915_LTPHTP_8000AA_oct10_2023.csv')
+df1 = pd.read_csv(f'{params.input_csv_path}/ppigpt_train_merged_bernett_goldstandard_nov27_2023.csv')
+df2 = pd.read_csv(f'{params.input_csv_path}/ppigpt_val_merged_bernett_goldstandard_nov27_2023.csv')
+df3 = pd.read_csv(f'{params.input_csv_path}/ppigpt_test_merged_bernett_goldstandard_nov27_2023.csv')
 
-seq1_valid = df['seq_1'].values.tolist()
-seq2_valid = df['seq_2'].values.tolist()
-seq1_train = df2['seq_1'].values.tolist()
-seq2_train = df2['seq_2'].values.tolist()
+seq1_train = df1['Sequence Interactor A'].values.tolist()
+seq2_train = df1['Sequence Interactor B'].values.tolist()
+seq1_valid = df2['Sequence Interactor A'].values.tolist()
+seq2_valid = df2['Sequence Interactor B'].values.tolist()
+seq1_test = df3['Sequence Interactor A'].values.tolist()
+seq2_test = df3['Sequence Interactor B'].values.tolist()
 
 train_dataset = Dataset.from_dict({'sequence_1': seq1_train,
                                    'sequence_2': seq2_train})
 valid_dataset = Dataset.from_dict({'sequence_1': seq1_valid,
                                    'sequence_2': seq2_valid})
+test_dataset = Dataset.from_dict({'sequence_1': seq1_test,
+                                  'sequence_2': seq2_test})
 
 dataset_dict = DatasetDict({
     'train': train_dataset,
-    'valid': valid_dataset
+    'valid': valid_dataset,
+    'test': test_dataset
 })
+
 print(dataset_dict)
-dataset_dict.save_to_disk(f'{params.output_dataset_path}/ppi_8000_raw.hf')
+dataset_dict.save_to_disk(f'{params.output_dataset_path}/ppi_golden_raw.hf')

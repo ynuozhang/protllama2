@@ -95,7 +95,7 @@ elif hparam.target == 'ppi':
 else:
     raise ValueError('Target not prepared for the training.')
 
-hparam.train_dataloader_length = 22735
+hparam.train_dataloader_length = 5881 # 47054 // 8
 if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
     os.makedirs(f'pretrain_protllama_{hparam.target}')
 training_log_path = str(f'pretrain_protllama_{hparam.target}/pl_logs/')
@@ -112,7 +112,7 @@ seed_everything(42)
 
 model = pretrainLlama(hparam)
 early_stop_callback = EarlyStopping(
-    monitor="val_loss",
+    monitor="test_loss",
     min_delta=0.0,
     patience=5,  # number of epoch with no improvement
     verbose=True,
@@ -123,12 +123,12 @@ if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(
     dirpath=training_model_path,
-    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
+    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-{train_loss:.3f}-{val_loss:.3f}_%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
     save_top_k=hparam.save_top_k,
     verbose=True,
-    monitor="val_loss",
+    monitor="test_loss",
     mode="min",
-    #every_n_epochs=1
+    every_n_epochs=1
 )
 lr_monitor = LearningRateMonitor(
     logging_interval='epoch'
@@ -147,7 +147,7 @@ else:
 # till 5th epoch, it will accumulate every 10 batches. From 5th epoch
 # till 9th epoch it will accumulate every 8 batches and after that no accumulation
 # will happen. Note that you need to use zero-indexed epoch keys here
-accumulator = GradientAccumulationScheduler(scheduling={0: 10, 4: 8, 9: 4, 15: 1})
+accumulator = GradientAccumulationScheduler(scheduling={0: 10, 2: 8, 4: 5, 6: 1})
 
 profiler = AdvancedProfiler(dirpath=training_log_path+f'{hparam.target}_{hparam.date}_{hparam.attempts}/', filename="perf_logs")
 
@@ -164,7 +164,7 @@ trainer = Trainer(
     gradient_clip_val=1, # llama used gradient clipping=1, default is norm
     #accumulate_grad_batches=hparam.accumulate_grad_batches, # already set callbacks
     max_epochs=hparam.epoch,
-    log_every_n_steps=1000,
+    log_every_n_steps=100,
     logger=logger,
     default_root_dir=f'pretrain_protllama_{hparam.target}/pl_model_training_cache/',
     # max_epochs=1,
@@ -185,4 +185,5 @@ trainer.fit(model, datamodule=dm)
 trainer.print(torch.cuda.memory_summary())
 timer.time_elapsed('train')
 timer.time_elapsed('validate')
+timer.time_elapsed('test')
 print(trainer.checkpoint_callback.best_model_path)
