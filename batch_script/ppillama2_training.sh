@@ -25,7 +25,7 @@ python3.8 $SCRIPT_LOC/bin/main.py \
   $OUTPUT_LOC \
   $TOKENIZER_LOC \
   --num_workers 8 \
-  --num_hidden_layers 30 \
+  --num_hidden_layers 32 \
   --num_attention_heads 40 \
   --num_key_value_heads 40 \
   --batch_size 1 \
