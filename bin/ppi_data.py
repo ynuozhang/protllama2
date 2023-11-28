@@ -84,7 +84,7 @@ class BatchedPPIDataset(object):
     def tokenize_sequences_forward(self):
         prot_tuples = list(zip(self.sequence_str_1, self.sequence_str_2))
 
-        with Pool(processes=8, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
+        with Pool(processes=16, initializer=init_pool, initargs=(self.tokenizer,)) as pool:
             tokenized_pairs = list(
                 tqdm(pool.imap(partial(standalone_tokenize_function),
                                prot_tuples),
