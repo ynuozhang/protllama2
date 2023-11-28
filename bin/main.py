@@ -98,7 +98,7 @@ else:
 hparam.train_dataloader_length = 5881 # 47054 // 8
 if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
     os.makedirs(f'pretrain_protllama_{hparam.target}')
-training_log_path = str(f'pretrain_protllama_{hparam.target}/pl_logs/')
+training_log_path = str(f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
 logger = WandbLogger(project=f"pretrain_protllama_{hparam.target}",
@@ -118,12 +118,12 @@ early_stop_callback = EarlyStopping(
     verbose=True,
     mode="min",
 )
-training_model_path = str(f'pretrain_protllama_{hparam.target}/pl_model_cache/')
+training_model_path = str(f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_model_cache_{hparam.date}_attempt_{hparam.attempts}/')
 if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(
     dirpath=training_model_path,
-    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-{train_loss:.3f}-{val_loss:.3f}_%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
+    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-{train_loss:.3f}-{val_loss:.3f}-{test_loss:.3f}_%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
     save_top_k=hparam.save_top_k,
     verbose=True,
     monitor="test_loss",
