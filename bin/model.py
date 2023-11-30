@@ -215,11 +215,8 @@ class pretrainLlama(pl.LightningModule):
         acc_test = ((shift_logits == shift_labels) & non_padding_mask).sum().item() / non_padding_mask.sum().item()
 
         # Log
-        self.log('test_loss', loss_test, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('test_perplexity', perplexity.item(), on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
-        self.log('test_accuracy', acc_test, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
 
-        return loss_test
+        return loss_test, acc_test, perplexity.item()
 
     #def generation(self, batch):
         #return self.model.generate(**batch)

@@ -14,13 +14,13 @@ DATE=$(date +%m_%d)
 
 singularity exec --nv  $image  scl enable rh-python38 bash << EOF > $LOG_LOC/$DATE.log 2>&1
 python3.8 $SCRIPT_LOC/bin/processing_ppi_csv.py \
-  $CSV_LOC
+  $CSV_LOC \
   $DATA_LOC > $DATE_ppi_csv_prepare_set1.log 2>&1
 
 python3.8 $SCRIPT_LOC/bin/main.py \
   $DATE \
   ppi \
-  1 \
+  2 \
   $DATA_LOC \
   $OUTPUT_LOC \
   $TOKENIZER_LOC \
@@ -37,7 +37,7 @@ python3.8 $SCRIPT_LOC/bin/main.py \
   --accumulate_grad_batches 10 \
   --strategy ddp \
   --flash_attention \
-  --save_top_k -1 > ${DATE}_ppi_pretrain_set1_full_ddp.log 2>&1
+  --save_top_k -1 > ${DATE}_ppi_pretrain_set2_full_ddp.log 2>&1
 
 exit
 

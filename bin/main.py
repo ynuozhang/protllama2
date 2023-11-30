@@ -112,7 +112,7 @@ seed_everything(42)
 
 model = pretrainLlama(hparam)
 early_stop_callback = EarlyStopping(
-    monitor="test_loss",
+    monitor="val_loss",
     min_delta=0.0,
     patience=5,  # number of epoch with no improvement
     verbose=True,
@@ -123,10 +123,10 @@ if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(
     dirpath=training_model_path,
-    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-{train_loss:.3f}-{val_loss:.3f}-{test_loss:.3f}_%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
+    filename="{epoch}-{train_perplexity:.3f}-{val_perplexity:.3f}-{train_loss:.3f}-{val_loss:.3f}_%s_%s_%s_%s" % (hparam.target, hparam.date, hparam.vocab_size, hparam.max_position_embeddings),
     save_top_k=hparam.save_top_k,
     verbose=True,
-    monitor="test_loss",
+    monitor="val_loss",
     mode="min",
     every_n_epochs=1
 )
@@ -166,7 +166,7 @@ trainer = Trainer(
     max_epochs=hparam.epoch,
     log_every_n_steps=100,
     logger=logger,
-    default_root_dir=f'pretrain_protllama_{hparam.target}/pl_model_training_cache/',
+    default_root_dir=f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_model_cache_{hparam.date}_attempt_{hparam.attempts}/',
     # max_epochs=1,
     # min_epochs=1,
     callbacks=[TQDMProgressBar(refresh_rate=10), accumulator,
@@ -185,5 +185,5 @@ trainer.fit(model, datamodule=dm)
 trainer.print(torch.cuda.memory_summary())
 timer.time_elapsed('train')
 timer.time_elapsed('validate')
-timer.time_elapsed('test')
 print(trainer.checkpoint_callback.best_model_path)
+trainer.test(ckpt_path='best', datamodule=dm)
