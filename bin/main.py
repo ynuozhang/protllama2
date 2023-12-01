@@ -56,6 +56,8 @@ def parse_args():
                         help='Number of batches accumulated before calculating loss. Per GPU accumulation.')
     parser.add_argument('--strategy', type=str, default=None,
                         help='Data parallelism strategies')
+    parser.add_argument('--special_prefix', type=str, default=None,
+                        help='Special dataset prefix added for model and data storage')
     parser.add_argument('--flash_attention', action='store_true',
                         help='Using flash attention 2 or not')
     parser.add_argument('--testornot', action='store_true',
