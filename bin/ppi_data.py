@@ -18,6 +18,7 @@ import gc
 import h5py
 import numpy as np
 from multiprocessing import Pool
+torch.cuda.empty_cache()
 
 global_tokenizer = None
 
