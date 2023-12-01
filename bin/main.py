@@ -108,16 +108,10 @@ if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
 training_log_path = str(f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
-<<<<<<< HEAD
-logger = WandbLogger(project=f"pretrain_protllama_golden_{hparam.target}",
-                     project=f"pretrain_protllama_{hparam.target}_{hparam.special_prefix}",
+
+logger = WandbLogger(project=f"pretrain_protllama_{hparam.target}_{hparam.special_prefix}",
                      name=f"{hparam.target}_{hparam.special_prefix}_{hparam.date}_{hparam.vocab_size}_pre-training_log", #display on the web
                      save_dir=f'pretrain_protllama_{hparam.target}_{hparam.special_prefix}/pl_logs/',
-=======
-logger = WandbLogger(project=f"pretrain_protllama_golden_{hparam.target}",
-                     name=f"{hparam.target}_{hparam.date}_{hparam.vocab_size}_attempts{hparam.attempts}_pre-training_log", #display on the web
-                     save_dir=f'pretrain_protllama_{hparam.target}/pl_logs/',
->>>>>>> 20d7fa2914d9f7d6b6f17ee8123f1ebd5b20d4a6
                      job_type='model-training',
                      group=f'pretrain_protllama2_{hparam.vocab_size}_{hparam.max_position_embeddings}',
                      id=f'version_{hparam.attempts}')
