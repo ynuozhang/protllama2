@@ -58,6 +58,8 @@ def parse_args():
                         help='Data parallelism strategies')
     parser.add_argument('--flash_attention', action='store_true',
                         help='Using flash attention 2 or not')
+    parser.add_argument('--testornot', action='store_true',
+                        help='Using test set or not')
     parser.add_argument(
         "--save_top_k",
         default=3,
@@ -91,19 +93,20 @@ elif hparam.target == 'ppi':
         vocab_size=hparam.vocab_size,
         target=hparam.target,
         max_sequence_length=hparam.max_position_embeddings,
+        testornot=hparam.testornot
     )
 else:
     raise ValueError('Target not prepared for the training.')
 
-hparam.train_dataloader_length = 5881 # 47054 // 8
+hparam.train_dataloader_length = 9345 # 47054 // 8
 if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
     os.makedirs(f'pretrain_protllama_{hparam.target}')
 training_log_path = str(f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
-logger = WandbLogger(project=f"pretrain_protllama_{hparam.target}",
-                     name=f"{hparam.target}_{hparam.date}_{hparam.vocab_size}_pre-training_log", #display on the web
-                     save_dir=f'pretrain_protllama_{hparam.target}/pl_logs/',
+logger = WandbLogger(project=f"pretrain_protllama_{hparam.target}_{hparam.special_prefix}",
+                     name=f"{hparam.target}_{hparam.special_prefix}_{hparam.date}_{hparam.vocab_size}_pre-training_log", #display on the web
+                     save_dir=f'pretrain_protllama_{hparam.target}_{hparam.special_prefix}/pl_logs/',
                      job_type='model-training',
                      group=f'pretrain_protllama2_{hparam.vocab_size}_{hparam.max_position_embeddings}',
                      id=f'version_{hparam.attempts}')
@@ -118,7 +121,7 @@ early_stop_callback = EarlyStopping(
     verbose=True,
     mode="min",
 )
-training_model_path = str(f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_model_cache_{hparam.date}_attempt_{hparam.attempts}/')
+training_model_path = str(f'pretrain_protllama_{hparam.target}_{hparam.special_prefix}_{hparam.date}/pl_model_cache_{hparam.date}_attempt_{hparam.attempts}/')
 if not os.path.exists(training_model_path):
     os.makedirs(training_model_path)
 checkpoint_callback = ModelCheckpoint(
@@ -149,7 +152,7 @@ else:
 # will happen. Note that you need to use zero-indexed epoch keys here
 accumulator = GradientAccumulationScheduler(scheduling={0: 10, 2: 8, 4: 5, 6: 1})
 
-profiler = AdvancedProfiler(dirpath=training_log_path+f'{hparam.target}_{hparam.date}_{hparam.attempts}/', filename="perf_logs")
+profiler = AdvancedProfiler(dirpath=training_log_path+f'{hparam.target}_{hparam.special_prefix}_{hparam.date}_{hparam.attempts}/', filename="perf_logs")
 
 
 trainer = Trainer(
@@ -166,7 +169,7 @@ trainer = Trainer(
     max_epochs=hparam.epoch,
     log_every_n_steps=100,
     logger=logger,
-    default_root_dir=f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_model_cache_{hparam.date}_attempt_{hparam.attempts}/',
+    default_root_dir=f'pretrain_protllama_{hparam.target}_{hparam.special_prefix}_{hparam.date}/pl_model_cache_{hparam.date}_attempt_{hparam.attempts}/',
     # max_epochs=1,
     # min_epochs=1,
     callbacks=[TQDMProgressBar(refresh_rate=10), accumulator,
@@ -185,5 +188,6 @@ trainer.fit(model, datamodule=dm)
 trainer.print(torch.cuda.memory_summary())
 timer.time_elapsed('train')
 timer.time_elapsed('validate')
-print(trainer.checkpoint_callback.best_model_path)
-trainer.test(ckpt_path='best', datamodule=dm)
+#print(trainer.checkpoint_callback.best_model_path)
+if hparam.testornot:
+    trainer.test(ckpt_path='best', datamodule=dm)

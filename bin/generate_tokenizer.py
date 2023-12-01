@@ -5,9 +5,11 @@ import datetime
 vocab_size = sys.argv[1]
 
 spm_args = f'--input=/data/rozen/home/e0833634/lama/data/swiss_2023_9/protein_corpus.txt ' \
-           f'--model_prefix=protein_{vocab_size}k ' \
+           f'--model_prefix=protein_{vocab_size}k_special ' \
+           f'--pad_id=3 ' \
+           f'--user_defined_symbols=<sep> ' \
            f'--vocab_size={vocab_size}000 ' \
-           '--num_threads=40'
+           '--num_threads=20'
 
 sys.stdout.write(str(datetime.datetime.now()) + ' | ')
 sys.stdout.write(f'Finish generating tokenizer for vocab size {vocab_size}k' + '\n')
