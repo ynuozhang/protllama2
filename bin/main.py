@@ -14,6 +14,8 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, \
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.profilers import PyTorchProfiler, AdvancedProfiler
 import time
+torch.cuda.empty_cache()
+
 
 # set wandb offline on HPC
 #os.environ['WANDB_MODE'] = "offline"
@@ -101,8 +103,8 @@ if not os.path.exists(f'pretrain_protllama_{hparam.target}'):
 training_log_path = str(f'pretrain_protllama_{hparam.target}_{hparam.date}/pl_logs/')
 if not os.path.exists(training_log_path):
     os.makedirs(training_log_path)
-logger = WandbLogger(project=f"pretrain_protllama_{hparam.target}",
-                     name=f"{hparam.target}_{hparam.date}_{hparam.vocab_size}_pre-training_log", #display on the web
+logger = WandbLogger(project=f"pretrain_protllama_golden_{hparam.target}",
+                     name=f"{hparam.target}_{hparam.date}_{hparam.vocab_size}_attempts{hparam.attempts}_pre-training_log", #display on the web
                      save_dir=f'pretrain_protllama_{hparam.target}/pl_logs/',
                      job_type='model-training',
                      group=f'pretrain_protllama2_{hparam.vocab_size}_{hparam.max_position_embeddings}',

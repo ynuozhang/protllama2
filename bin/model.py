@@ -9,6 +9,7 @@ from transformers import get_cosine_schedule_with_warmup
 import sentencepiece as spm
 from argparse import ArgumentParser
 import torch
+torch.cuda.empty_cache()
 from torch.optim.lr_scheduler import _LRScheduler
 import numpy as np
 
